@@ -1,0 +1,6 @@
+A copy of Douglas Crockford's jslint utilty, downloaded from:
+
+http://www.jslint.com/rhino/jslint.js
+
+Edited to work with node.js
+
