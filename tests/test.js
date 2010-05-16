@@ -1,7 +1,6 @@
 var sys = require('sys');
 var assert = require('assert');
 var bencode = require('../bencode');
-var parseUri = require('../vendors/stevenlevithan/parseUri');
 var sortedArray = require('../sortedArray');
 
 // Test bencode
@@ -35,15 +34,6 @@ function testBencode() {
     }
 }
 
-function testParseUri() {
-	var cases = [ ['http://torrent.ubuntu.com:6969/announce']], i, casesLen, aCase, uri;
-    for (i = 0, casesLen = cases.length; i < casesLen; i = i + 1) {
-        aCase = cases[i];
-		uri = aCase[0];
-		sys.log(uri + ' returns ' + JSON.stringify(parseUri.parseUri(uri)));
-	}
-}
-
 function testSortedArray() {
     var a = [];
     assertSame(a, []);
@@ -72,7 +62,6 @@ function testSortedArray() {
 function tests() {
     try {
         testBencode();
-		// testParseUri();
 		testSortedArray();
     } catch (myError) {
         sys.puts("Exception: " + JSON.stringify(myError));

@@ -1,5 +1,5 @@
 exports.encode = function encode(s) {
-    var type = typeof s, result, i, sLen, prop;
+    var type = typeof s, result, i, sLen, prop, props;
     if (type === 'number') {
         return 'i' + s + 'e';
     } else if (type === 'string') {
@@ -14,10 +14,16 @@ exports.encode = function encode(s) {
                 return result + 'e';
             } else {
                 result = 'd';
+                props = [];
                 for (prop in s) {
                     if (s.hasOwnProperty(prop)) {
-                        result += encode(prop) + encode(s[prop]);
+                        props.push(prop);
                     }
+                }
+                props.sort();
+                for (i = 0, sLen = props.length; i < sLen; i += 1) {
+                    prop = props[i];
+                    result += encode(prop) + encode(s[prop]);
                 }
                 return result + 'e';
             }

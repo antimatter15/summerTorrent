@@ -17,7 +17,7 @@ function pingTracker(metaInfo, store, trackerClient) {
 		uploaded: 0,
 		downloaded: 0,
 		left: store.left,
-		compact:0,
+		compact:1,
 		event:'started'
 	};
 	tracker.ping(trackerClient, params, function (error, response) {
@@ -25,12 +25,11 @@ function pingTracker(metaInfo, store, trackerClient) {
 	});
 }
 
-function computeHash(metaInfo) {
-	var info = metaInfo.info,
-		encoded = bencode.encode(info),
+function computeHash(info) {
+	var encoded = bencode.encode(info),
 		hash = crypto.createHash('sha1');
 	hash.update(encoded);
-	metaInfo.info_hash = hash.digest('binary');
+	return hash.digest('binary');
 }
 
 function startTorrent(torrentPath, destDir) {
@@ -45,7 +44,7 @@ function startTorrent(torrentPath, destDir) {
 			if ('comment' in metaInfo) {
 				sys.puts('Torrent \'' + metaInfo.comment + '\'');					
 			}
-			computeHash(metaInfo);
+			metaInfo.info_hash = computeHash(metaInfo.info);
 			store = filestore.create(metaInfo, destDir);
 			sys.log('inspecting files');
 			filestore.inspect(store,
