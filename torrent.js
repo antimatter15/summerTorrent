@@ -2,16 +2,35 @@ var sys = require('sys'),
     fs = require('fs'),
 	bencode = require('./bencode'),
 	filestore = require('./filestore'),
-	tracker = require("./tracker");
+	tracker = require("./tracker"),
+    crypto = require('crypto');
 
 function log(msg) {
 	sys.puts(msg);
 }
 
 function pingTracker(metaInfo, store, trackerClient) {
-	tracker.ping(trackerClient, {}, function (error, response) {
+	var params = {
+		info_hash: metaInfo.info_hash,
+		peer_id: '01234567890123456789',
+		port: 6881,
+		uploaded: 0,
+		downloaded: 0,
+		left: store.left,
+		compact:0,
+		event:'started'
+	};
+	tracker.ping(trackerClient, params, function (error, response) {
 		system.log('pingTracker callback ' + error + ' ' + JSON.stringify(response));
 	});
+}
+
+function computeHash(metaInfo) {
+	var info = metaInfo.info,
+		encoded = bencode.encode(info),
+		hash = crypto.createHash('sha1');
+	hash.update(encoded);
+	metaInfo.info_hash = hash.digest('binary');
 }
 
 function startTorrent(torrentPath, destDir) {
@@ -26,6 +45,7 @@ function startTorrent(torrentPath, destDir) {
 			if ('comment' in metaInfo) {
 				sys.puts('Torrent \'' + metaInfo.comment + '\'');					
 			}
+			computeHash(metaInfo);
 			store = filestore.create(metaInfo, destDir);
 			sys.log('inspecting files');
 			filestore.inspect(store,
@@ -33,7 +53,6 @@ function startTorrent(torrentPath, destDir) {
 					if (error) {
 						log('Could not inspect torrent files ' + error);
 					} else {
-						log('goodPieces: ' + store.goodPieces);
 						trackerClient = tracker.create(metaInfo);
 						pingTracker(metaInfo, store, trackerClient);
 					}

@@ -2,6 +2,7 @@ var sys = require('sys');
 var assert = require('assert');
 var bencode = require('../bencode');
 var parseUri = require('../vendors/stevenlevithan/parseUri');
+var sortedArray = require('../sortedArray');
 
 // Test bencode
 
@@ -43,10 +44,36 @@ function testParseUri() {
 	}
 }
 
+function testSortedArray() {
+    var a = [];
+    assertSame(a, []);
+    sortedArray.add(a, 0);
+    assertSame(a, [0]);
+    sortedArray.add(a, 2);
+    assertSame(a, [0, 2]);
+    sortedArray.add(a, 4);
+    assertSame(a, [0, 2, 4]);
+    sortedArray.add(a, -1);
+    assertSame(a, [-1, 0, 2, 4]);
+    sortedArray.add(a, 1);
+    assertSame(a, [-1, 0, 1, 2, 4]);
+    sortedArray.add(a, 3);
+    assertSame(a, [-1, 0, 1, 2, 3, 4]);
+    sortedArray.add(a, 5);
+    assertSame(a, [-1, 0, 1, 2, 3, 4, 5]);
+    sortedArray.remove(a, 5);
+    assertSame(a, [-1, 0, 1, 2, 3, 4]);
+    sortedArray.remove(a, 3);
+    assertSame(a, [-1, 0, 1, 2, 4]);
+    sortedArray.remove(a, -1);
+    assertSame(a, [0, 1, 2, 4]);
+}
+
 function tests() {
     try {
         testBencode();
 		// testParseUri();
+		testSortedArray();
     } catch (myError) {
         sys.puts("Exception: " + JSON.stringify(myError));
         throw myError;

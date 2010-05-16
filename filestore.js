@@ -1,9 +1,11 @@
 var sys = require('sys'),
     fs = require('fs'),
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    sortedArray = require('./sortedArray');
 
 /*
- * Filestore: { pieceLength pieces files: [{path offset length md5}...] }
+ * Filestore: { pieceLength, pieces, files: [{path offset length md5}...],
+ *     left }
  * offset is in increasing order, so that binary search can find a given absolute offset.
  */
 
@@ -34,6 +36,8 @@ function create(metaInfo, destDir) {
         throw 'no info found in metaInfo';
     }   
     result.pieceCount = Math.floor((result.totalLength + pieceLength - 1) / pieceLength);
+    result.lastPieceLength = result.pieceCount <= 0 ? 0 :
+    	result.totalLength - pieceLength * (result.pieceCount - 1);
     return result;
 }
 
@@ -167,6 +171,20 @@ function readPiece(store, pieceIndex, callback) {
     readPieceImp(iterator, callback);
 }
 
+function pieceLength(store, pieceIndex) {
+    if (pieceIndex < store.pieceCount - 1) {
+        return store.pieceLength;
+    } else {
+        return store.lastPieceLength;
+    }
+}
+
+function markPieceGood(store, pieceIndex) {
+    store.pieceMap[pieceIndex] = true;
+    sortedArray.remove(store.badPieces, pieceIndex);
+    sortedArray.add(store.goodPieces, pieceIndex);
+}
+
 function inspectImp(store, pieceIndex, hash, callback) {
     readPiece(store, 0, function (error, data) {
         var digest, expected, goodPiece;
@@ -181,12 +199,15 @@ function inspectImp(store, pieceIndex, hash, callback) {
 				goodPiece = expected === digest;
                 store.pieceMap.push(goodPiece);
 				if (goodPiece) {
-					store.goodPieces += 1;
+					store.goodPieces.push(pieceIndex);
+				} else {
+					store.badPieces.push(pieceIndex);
+					store.left += pieceLength(store, pieceIndex);
 				}
-                pieceIndex = pieceIndex + 1;
+                pieceIndex += 1;
                 if (pieceIndex < store.pieceCount) {
                     hash = crypto.createHash('sha1');
-                    inspectImp(store, pieceIndex + 1, hash, callback);
+                    inspectImp(store, pieceIndex, hash, callback);
                 } else {
                     callback(null);
                 }
@@ -199,7 +220,9 @@ function inspectImp(store, pieceIndex, hash, callback) {
 function inspect(store, callback) {
     var hash = crypto.createHash('sha1');
 	store.pieceMap = [];
-	store.goodPieces = 0;
+	store.goodPieces = [];
+	store.badPieces = [];
+	store.left = 0;
     inspectImp(store, 0, hash, callback);
 }
 
