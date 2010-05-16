@@ -2,7 +2,7 @@ var sys = require('sys'),
     torrent = require('./torrent');
 
 function parseArgs(args) {
-	var result = {},
+	var result = {destDir:'.'},
 	    torrentFiles = [],
 		i, argLen, arg;
 	for (i = 0, argLen = args.length; i < argLen; i += 1) {
@@ -11,7 +11,12 @@ function parseArgs(args) {
 	        throw "Empty argument";
 	    }
 	    if (arg.charAt(0) == '-') {
-	        throw "Unknown flag " + arg;
+			if (arg === '--destDir') {
+				result.destDir = args[i+1];
+				i += 1;
+			} else {
+	        	throw "Unknown flag " + arg;
+			}
 	    } else {
 	        torrentFiles.push(arg);
 	    }
@@ -29,7 +34,7 @@ function main() {
 	} else {
 	    for (i = 0, iLen = torrentFiles.length; i < iLen; i += 1) {
 	        file = torrentFiles[i];
-	        torrent.startTorrent(file);
+	        torrent.startTorrent(file, args.destDir);
 	    }
 	}
 }
