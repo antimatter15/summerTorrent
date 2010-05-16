@@ -1,13 +1,14 @@
 var sys = require('sys');
 var assert = require('assert');
 var bencode = require('../bencode');
+var parseUri = require('../vendors/stevenlevithan/parseUri');
 
 // Test bencode
 
 function assertSame(a, b) {
     var sa = JSON.stringify(a),
         sb = JSON.stringify(b);
-    sys.puts(sa + ' === ' + sb);
+    // sys.puts(sa + ' === ' + sb);
     assert.ok(sa === sb);
 }
 
@@ -33,9 +34,19 @@ function testBencode() {
     }
 }
 
+function testParseUri() {
+	var cases = [ ['http://torrent.ubuntu.com:6969/announce']], i, casesLen, aCase, uri;
+    for (i = 0, casesLen = cases.length; i < casesLen; i = i + 1) {
+        aCase = cases[i];
+		uri = aCase[0];
+		sys.log(uri + ' returns ' + JSON.stringify(parseUri.parseUri(uri)));
+	}
+}
+
 function tests() {
     try {
         testBencode();
+		// testParseUri();
     } catch (myError) {
         sys.puts("Exception: " + JSON.stringify(myError));
         throw myError;

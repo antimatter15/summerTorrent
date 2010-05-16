@@ -1,14 +1,21 @@
 var sys = require('sys'),
     fs = require('fs'),
 	bencode = require('./bencode'),
-	filestore = require('./filestore');
+	filestore = require('./filestore'),
+	tracker = require("./tracker");
 
 function log(msg) {
 	sys.puts(msg);
 }
 
+function pingTracker(metaInfo, store, trackerClient) {
+	tracker.ping(trackerClient, {}, function (error, response) {
+		system.log('pingTracker callback ' + error + ' ' + JSON.stringify(response));
+	});
+}
+
 function startTorrent(torrentPath, destDir) {
-	var metaInfo, store, error2;
+	var metaInfo, store, error2, trackerClient;
 	sys.puts('Starting torrent ' + torrentPath);
 	fs.readFile(torrentPath, 'binary', function startTorrentCallback(error, contents) {
 		var aFileStore;
@@ -27,6 +34,8 @@ function startTorrent(torrentPath, destDir) {
 						log('Could not inspect torrent files ' + error);
 					} else {
 						log('goodPieces: ' + store.goodPieces);
+						trackerClient = tracker.create(metaInfo);
+						pingTracker(metaInfo, store, trackerClient);
 					}
 				});
 		}
