@@ -9,6 +9,22 @@ var sys = require('sys'),
  * offset is in increasing order, so that binary search can find a given absolute offset.
  */
 
+function parseMultipleFiles(store, info, destDir) {
+    var infoFiles = info.files,
+        infoName = info.name,
+        files = [],
+        totalLength = 0, i, len, file;
+    for (i = 0, len = infoFiles.length; i < len; i += 1) {
+        file = infoFiles[i];
+        files.push({path: destDir + '/' + infoName + '/' + file.path,
+        	offset: totalLength, length: file.length, md5sum: file.md5sum});
+        totalLength += file.length;
+    }
+    store.files = files;
+    store.totalLength = totalLength;
+    sys.log('files: ' + JSON.stringify(store.files));
+}
+
 function create(metaInfo, destDir) {
     var result, info, pieceLength;
     result = {pieceLength: metaInfo['piece length'], pieces: metaInfo.pieces};
@@ -30,7 +46,7 @@ function create(metaInfo, destDir) {
             result.files = [{path: destDir + '/' + info.name, offset: 0, length: info.length, md5: info.md5}];
             result.totalLength = info.length;
         } else {
-            throw 'multiple files not supported yet';
+        	parseMultipleFiles(result, info, destDir);
         }
     } else {
         throw 'no info found in metaInfo';
@@ -44,9 +60,9 @@ function create(metaInfo, destDir) {
 // Find file that associates with offset
 // returns index of file
 function findFile(files, offset) {
-    var a = 0, b = files.length, c, file;
+    var a = -1, b = files.length, c, file;
     while (a < b) {
-        c = Math.floor((a + b) / 2);
+        c = (a + b) >> 1;
         file = files[c];
         if (file.offset <= offset && file.offset + file.length > offset) {
             return c;

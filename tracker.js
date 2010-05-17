@@ -1,13 +1,51 @@
 var sys = require('sys'),
 	http = require('http'),
-	url = require('url'),
-	querystring = require('querystring');
+	url = require('url');
+
+function toHexDigit(n) {
+    return '0123456789abcdef'[n];
+}
+
+function escapeBinary(s) {
+    // Node's querystring.stringify doesn't escape binary strings
+    // correctly. (It inserts escape charcters. Not sure why, maybe
+    // it is treating the data as UTF8 encoded or some other encoding.)
+    var result = '', i, len, c, cc;
+    s = '' + s;
+    for (i = 0, len = s.length; i < len; i += 1) {
+        c = s.charAt(i);
+        if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+        	  || (c == '.' || c == '-' || c == '_' || c == '~')) {
+      	    result += c;
+        } else {
+            cc = s.charCodeAt(i);
+            result += '%' + toHexDigit(0xf & (cc >> 4)) + toHexDigit(0xf & cc);
+        }
+    }
+    return result;
+}
+
+function queryStringify(params) {
+	var result = '', key, first = true;
+	for (key in params) {
+	    if (params.hasOwnProperty(key)) {
+	        if (first) {
+	            first = false;
+	        } else {
+	            result += '&';
+	        }
+	        result += key + '=' + escapeBinary(params[key]);
+	    }
+	}
+	return result;
+}
 
 function create(metaInfo) {
 	var announce = metaInfo.announce,
-		parsedUrl = url.parse(announce);
+		parsedUrl = url.parse(announce),
+		port = parsedUrl.port ? parsedUrl.port : 80;
 	return {metaInfo: metaInfo,
-		tracker: http.createClient(parsedUrl.port, parsedUrl.hostname),
+		tracker: http.createClient(port, parsedUrl.hostname),
 		trackerRelativeUri: parsedUrl.pathname,
 		host: parsedUrl.hostname,
 		peers: {}};
@@ -15,7 +53,7 @@ function create(metaInfo) {
 
 function ping(trackerClient, params, callback) {
 	var path = trackerClient.trackerRelativeUri + '?' +
-		querystring.stringify(params),
+		queryStringify(params),
 		request = trackerClient.tracker.request('GET', path,
 			{'host': trackerClient.host});
 	sys.log('path:' + path);
