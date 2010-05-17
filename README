@@ -1,7 +1,7 @@
 A Bittorrent client written in JavaScript on top of node.js
 
 SummerTorrent is intended to be a full-fledged command-line-based client, similar
-to http://github.com/jackpal/TaipeiTorrent.
+to http://github.com/jackpal/Taipei-Torrent.
 
 This is in contrast to http://github.com/WizKid/node-bittorrent ,
 which is currently more of a bitTorrent seeder than a full bitTorrent client.
