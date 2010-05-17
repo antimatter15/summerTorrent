@@ -1,3 +1,23 @@
 A Bittorrent client written in JavaScript on top of node.js
 
-Doesn't actually work yet.
+SummerTorrent is intended to be a full-fledged command-line-based client, similar
+to http://github.com/jackpal/TaipeiTorrent.
+
+This is in contrast to http://github.com/WizKid/node-bittorrent ,
+which is currently more of a bitTorrent seeder than a full bitTorrent client.
+
+*Caution: SummerTorrent doesn't actually work yet.*
+
+Implemented features:
++ Parse .torrent files.
++ Scan disk to compute good/bad pieces for data files.
++ Request peer list from tracker to request.
+
+TODO:
+- UPNP open a port for listening for peers.
+- Handle redirects from trackers.
+- Create directories for multi-file torrents.
+- Listen for peers.
+- Parse tracker response.
+- Connect to peers.
+- Exchange data with peers.
