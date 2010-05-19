@@ -11,13 +11,13 @@ which is currently more of a bitTorrent seeder than a full bitTorrent client.
 Implemented features:
 + Parse .torrent files.
 + Scan disk to compute good/bad pieces for data files.
-+ Request peer list from tracker to request.
++ Request peer list from tracker.
++ Parse tracker response.
 
 TODO:
 - UPNP open a port for listening for peers.
 - Handle redirects from trackers.
 - Create directories for multi-file torrents.
 - Listen for peers.
-- Parse tracker response.
 - Connect to peers.
 - Exchange data with peers.
