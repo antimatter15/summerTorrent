@@ -12,12 +12,15 @@ function create(torrentPath, destDir) {
         torrentPath: torrentPath,
         destDir: destDir,
         listenerPort: 6881,
+        peerId: '01234567899876543210',
         peers: {},
+        store: {},
+        metaInfo: {},
         pingTracker: function () {
             var that = this,
                 params = {
                     info_hash: this.metaInfo.info_hash,
-                    peer_id: '01234567890123456789',
+                    peer_id: this.peerId,
                     port: this.listenerPort,
                     uploaded: 0,
                     downloaded: 0,
@@ -45,8 +48,18 @@ function create(torrentPath, destDir) {
         addPeer : function (peerAddress) {
             if ( ! (peerAddress in this.peers) ) {
                 this.peers[peerAddress] = peer.create(
+                        peerAddress,
                         this.decodeHost(peerAddress),
-                        this.decodePort(peerAddress));
+                        this.decodePort(peerAddress),
+                        this);
+            }
+        },
+
+        removePeer: function (peerAddress) {
+            var peer = this.peers[peerAddress];
+            if (peer) {
+                sys.log('Removing peer ' + peer.host);
+                delete this.peers[peerAddress];
             }
         },
 
