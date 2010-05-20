@@ -10,8 +10,10 @@ function create(key, host, port, torrent) {
         input = '',
         needHeader = true,
         goodPieces = bitfield.create(torrent.store.pieceCount),
-        interested = false,
-        choked = true,
+        amInterested = false,
+        amChoked = true,
+        peerInterested = false,
+        peerChoked = true,
         peer = {
             torrent: torrent,
             key: key,
@@ -56,12 +58,12 @@ function create(key, host, port, torrent) {
 
         function doHave(data) {
             var piece = readBigEndianInt(data);
-            sys.log('have ' + piece);
+            // sys.log('have ' + piece);
             goodPieces.set(piece, true);
         }
 
         function doBitfield(data) {
-            sys.log('bitfield');
+            // sys.log('bitfield');
             goodPieces.setWire(data);
         }
 
@@ -76,11 +78,10 @@ function create(key, host, port, torrent) {
                     peer.peerId = input.substring(48, 68);
                     input = input.substring(68);
                     needHeader = false;
-                    sys.log('Got valid header');
+                    // sys.log('Got valid header');
                     return true;
                 } else {
-                    sys.log('Got invalid header');
-                    peer.drop();
+                    throw 'Got invalid header';
                 }
                 return false;
             }
@@ -98,13 +99,17 @@ function create(key, host, port, torrent) {
                 id = input.charCodeAt(4);
                 payload = input.substring(5, 4 + dataLen);
                 if (id == 0) {
-                    sys.log(host + " choke");
+                    // Choke
+                    peerChoked = true;
                 } else if (id == 1) {
-                    sys.log(host + " unchoke");
+                    // Unchoke
+                    peerChoked = false;
                 } else if (id == 2) {
-                    sys.log(host + " interested");
+                    // Interested
+                    peerInterested = true;
                 } else if (id == 3) {
-                    sys.log(host + " not interested");
+                    // Not interested
+                    peerInterested = false;
                 } else if (id == 4) {
                     doHave(payload);
                 } else if (id == 5) {
@@ -118,6 +123,7 @@ function create(key, host, port, torrent) {
                 } else if (id == 9) {
                     sys.log(host + " DHT listen-port");
                 } else {
+                    // May want to silently ignore
                     throw 'Unknown request ' + id;
                 }
             }
@@ -130,7 +136,8 @@ function create(key, host, port, torrent) {
             while (processMessage());
         } catch (e) {
             sys.log('exception thrown while processing messages ' + e);
-            peer.drop();
+            stream.end();
+            torrent.removePeer(key);
         }
     });
     return peer;
