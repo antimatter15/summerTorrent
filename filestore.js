@@ -207,7 +207,7 @@ function inspectImp(store, pieceIndex, hash, callback) {
                 digest = hash.digest('binary');
                 expected = store.pieces.substring(pieceIndex * 20, (pieceIndex + 1) * 20);
                 goodPiece = expected === digest;
-                store.bitfield.set(pieceIndex, goodPiece);
+                store.goodPieces.set(pieceIndex, goodPiece);
                 if (!goodPiece) {
                     store.left += pieceLength(store, pieceIndex);
                 }
@@ -226,7 +226,7 @@ function inspectImp(store, pieceIndex, hash, callback) {
 // callback(err)
 function inspect(store, callback) {
     var hash = crypto.createHash('sha1');
-    store.bitfield = bitfield.create(store.pieceCount);
+    store.goodPieces = bitfield.create(store.pieceCount);
     store.left = 0;
     inspectImp(store, 0, hash, callback);
 }

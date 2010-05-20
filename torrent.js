@@ -47,11 +47,15 @@ function create(torrentPath, destDir) {
 
         addPeer : function (peerAddress) {
             if ( ! (peerAddress in this.peers) ) {
-                this.peers[peerAddress] = peer.create(
-                        peerAddress,
-                        this.decodeHost(peerAddress),
-                        this.decodePort(peerAddress),
-                        this);
+                try {
+                    this.peers[peerAddress] = peer.create(
+                            peerAddress,
+                            this.decodeHost(peerAddress),
+                            this.decodePort(peerAddress),
+                            this);
+                } catch (e) {
+                    sys.log('Exception while creating peer ' + e);
+                }
             }
         },
 

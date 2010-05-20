@@ -1,4 +1,5 @@
-var net = require('net'),
+var bitfield = require('./bitfield'),
+    net = require('net'),
     sys = require('sys');
 
 function create(key, host, port, torrent) {
@@ -8,6 +9,9 @@ function create(key, host, port, torrent) {
         flagBytes = '\0\0\0\0\0\0\0\0',
         input = '',
         needHeader = true,
+        goodPieces = bitfield.create(torrent.store.pieceCount),
+        interested = false,
+        choked = true,
         peer = {
             torrent: torrent,
             key: key,
@@ -41,10 +45,24 @@ function create(key, host, port, torrent) {
         sys.log('got data from ' + host);
 
         function readBigEndianInt(s) {
+            if (s.length < 4) {
+                throw 'expected 4 bytes.';
+            }
             return (s.charCodeAt(0) << 24)
                 | (s.charCodeAt(1) << 16)
                 | (s.charCodeAt(2) << 8)
                 | s.charCodeAt(3);
+        }
+
+        function doHave(data) {
+            var piece = readBigEndianInt(data);
+            sys.log('have ' + piece);
+            goodPieces.set(piece, true);
+        }
+
+        function doBitfield(data) {
+            sys.log('bitfield');
+            goodPieces.setWire(data);
         }
 
         // returns true if a message was processed
@@ -78,6 +96,7 @@ function create(key, host, port, torrent) {
                 sys.log(host + " Keep alive");
             } else {
                 id = input.charCodeAt(4);
+                payload = input.substring(5, 4 + dataLen);
                 if (id == 0) {
                     sys.log(host + " choke");
                 } else if (id == 1) {
@@ -87,9 +106,9 @@ function create(key, host, port, torrent) {
                 } else if (id == 3) {
                     sys.log(host + " not interested");
                 } else if (id == 4) {
-                    sys.log(host + " have");
+                    doHave(payload);
                 } else if (id == 5) {
-                    sys.log(host + " bitfield");
+                    doBitfield(payload);
                 } else if (id == 6) {
                     sys.log(host + " request");
                 } else if (id == 7) {
@@ -99,7 +118,7 @@ function create(key, host, port, torrent) {
                 } else if (id == 9) {
                     sys.log(host + " DHT listen-port");
                 } else {
-                    sys.log(host + " Unknown request " + id);
+                    throw 'Unknown request ' + id;
                 }
             }
             input = input.substring(4 + dataLen);
@@ -107,7 +126,12 @@ function create(key, host, port, torrent) {
 
         };
         input += data;
-        while (processMessage());
+        try {
+            while (processMessage());
+        } catch (e) {
+            sys.log('exception thrown while processing messages ' + e);
+            peer.drop();
+        }
     });
     return peer;
 }

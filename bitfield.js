@@ -11,6 +11,9 @@ exports.create = function (n, bytes) {
     function stringToArray(bytes) {
         var i;
         if (bytes) {
+            if (bytes.length != byteLen) {
+                throw "bad bytes length.";
+            }
             for (i = 0; i < byteLen; i++) {
                 b[i] = bytes.charCodeAt(i) & 0xff;
             }
@@ -23,12 +26,18 @@ exports.create = function (n, bytes) {
     stringToArray(bytes);
     return {
         set: function(index, val) {
+            if (!(index >= 0 && index < n)) {
+                throw "bad index " + index;
+            }
             var i = index >> 3,
                 m = 1 << ((~index) & 7),
                 v = b[i];
             b[i] = v & (~m) | (val ? m : 0);
         },
         get: function(index, val) {
+            if (!(index >= 0 && index < n)) {
+                throw "bad index " + index;
+            }
             var i = index >> 3,
                 m = 1 << ((~index) & 7),
                 v = b[i];
