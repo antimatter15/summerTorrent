@@ -1,7 +1,8 @@
 var sys = require('sys'),
     bitfield = require('./bitfield');
     fs = require('fs'),
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    path = require('path');
 
 /*
  * Filestore: { pieceLength, pieces, files: [{path offset length md5}...],
@@ -16,7 +17,7 @@ function parseMultipleFiles(store, info, destDir) {
         totalLength = 0, i, len, file;
     for (i = 0, len = infoFiles.length; i < len; i += 1) {
         file = infoFiles[i];
-        files.push({path: destDir + '/' + infoName + '/' + file.path,
+        files.push({path: path.join(destDir, infoName, file.path),
             offset: totalLength, length: file.length, md5sum: file.md5sum});
         totalLength += file.length;
     }
@@ -43,7 +44,7 @@ function create(metaInfo, destDir) {
         // Check if this is a single file torrent or a file list torrent
         if ('length' in info) {
             // single file
-            result.files = [{path: destDir + '/' + info.name, offset: 0, length: info.length, md5: info.md5}];
+            result.files = [{path: path.join(destDir, info.name), offset: 0, length: info.length, md5: info.md5}];
             result.totalLength = info.length;
         } else {
             parseMultipleFiles(result, info, destDir);
