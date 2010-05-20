@@ -1,7 +1,8 @@
-var sys = require('sys');
-var assert = require('assert');
-var bencode = require('../bencode');
-var sortedArray = require('../sortedArray');
+var assert = require('assert'),
+    bencode = require('../bencode'),
+    bitfield = require('../bitfield'),
+    sortedArray = require('../sortedArray'),
+    sys = require('sys');
 
 // Test bencode
 
@@ -34,6 +35,19 @@ function testBencode() {
     }
 }
 
+function testBitfield() {
+    var b = bitfield.create(16);
+    assertSame(b.getWire(), '\0\0');
+    b.set(7, 1);
+    assertSame(b.getWire(), '\1\0');
+    b.set(0, 1);
+    assertSame(b.getWire(), '\201\0');
+    b.set(8, 1);
+    assertSame(b.getWire(), '\201\200');
+    b.setWire('\1\2');
+    assertSame(b.getWire(), '\1\2');
+}
+
 function testSortedArray() {
     var a = [];
     assertSame(a, []);
@@ -62,7 +76,8 @@ function testSortedArray() {
 function tests() {
     try {
         testBencode();
-		testSortedArray();
+        testBitfield();
+        testSortedArray();
     } catch (myError) {
         sys.puts("Exception: " + JSON.stringify(myError));
         throw myError;

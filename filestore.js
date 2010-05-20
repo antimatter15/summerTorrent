@@ -1,7 +1,7 @@
 var sys = require('sys'),
+    bitfield = require('./bitfield');
     fs = require('fs'),
-    crypto = require('crypto'),
-    sortedArray = require('./sortedArray');
+    crypto = require('crypto');
 
 /*
  * Filestore: { pieceLength, pieces, files: [{path offset length md5}...],
@@ -17,7 +17,7 @@ function parseMultipleFiles(store, info, destDir) {
     for (i = 0, len = infoFiles.length; i < len; i += 1) {
         file = infoFiles[i];
         files.push({path: destDir + '/' + infoName + '/' + file.path,
-        	offset: totalLength, length: file.length, md5sum: file.md5sum});
+            offset: totalLength, length: file.length, md5sum: file.md5sum});
         totalLength += file.length;
     }
     store.files = files;
@@ -39,21 +39,21 @@ function create(metaInfo, destDir) {
         }
         pieceLength = info['piece length'];
         result.pieceLength = pieceLength;
-    
+
         // Check if this is a single file torrent or a file list torrent
         if ('length' in info) {
             // single file
             result.files = [{path: destDir + '/' + info.name, offset: 0, length: info.length, md5: info.md5}];
             result.totalLength = info.length;
         } else {
-        	parseMultipleFiles(result, info, destDir);
+            parseMultipleFiles(result, info, destDir);
         }
     } else {
         throw 'no info found in metaInfo';
-    }   
+    }
     result.pieceCount = Math.floor((result.totalLength + pieceLength - 1) / pieceLength);
     result.lastPieceLength = result.pieceCount <= 0 ? 0 :
-    	result.totalLength - pieceLength * (result.pieceCount - 1);
+        result.totalLength - pieceLength * (result.pieceCount - 1);
     return result;
 }
 
@@ -101,52 +101,52 @@ function createRangeIterator(store, offset, length) {
 
 // Calls callback(err, file)
 function ensureFile(file, callback) {
-	var mode = 6 * 64 + 4 * 8 + 4; // 0644 aka rw-r--r--
-	if (file.fd) {
-		callback(null, file);
-	} else {
-		fs.stat(file.path, function (err, stats) {
-			if (err) {
-				fs.open(file.path, 'w', mode, function (error, fd) {
-					if (error) {
-						callback(error, file);
-					} else {
-						fs.truncate(fd, file.length, function (error) {
-							if (error) {
-								callback(error, file);
-							} else {
-								// Need to close this descriptor and try again.
-								fs.close(fd, function (error) {
-									if (error) {
-										callback(error, file);
-									}
-									ensureFile(file, callback);
-								});
-							}
-						});
-					}
-				});
-			} else if (stats.isDirectory() || stats.size !== file.length) {
-				fs.unlink(file.path, function (error) {
-					if (error) {
-						callback(error, file);
-					} else {
-						ensureFile(file, callback);
-					}
-				});
-			} else {
-				// file exists, and is right length and type
-				fs.open(file.path, 'r+', mode, function (error, fd) {
-					if (error) {
-						callback(error, file);
-					} else {
-						file.fd = fd;
-						callback(error, file);
-					}
-				});
-			}
-		});
-	}
+    var mode = 6 * 64 + 4 * 8 + 4; // 0644 aka rw-r--r--
+    if (file.fd) {
+        callback(null, file);
+    } else {
+        fs.stat(file.path, function (err, stats) {
+            if (err) {
+                fs.open(file.path, 'w', mode, function (error, fd) {
+                    if (error) {
+                        callback(error, file);
+                    } else {
+                        fs.truncate(fd, file.length, function (error) {
+                            if (error) {
+                                callback(error, file);
+                            } else {
+                                // Need to close this descriptor and try again.
+                                fs.close(fd, function (error) {
+                                    if (error) {
+                                        callback(error, file);
+                                    }
+                                    ensureFile(file, callback);
+                                });
+                            }
+                        });
+                    }
+                });
+            } else if (stats.isDirectory() || stats.size !== file.length) {
+                fs.unlink(file.path, function (error) {
+                    if (error) {
+                        callback(error, file);
+                    } else {
+                        ensureFile(file, callback);
+                    }
+                });
+            } else {
+                // file exists, and is right length and type
+                fs.open(file.path, 'r+', mode, function (error, fd) {
+                    if (error) {
+                        callback(error, file);
+                    } else {
+                        file.fd = fd;
+                        callback(error, file);
+                    }
+                });
+            }
+        });
+    }
 }
 
 function createPieceFragmentIterator(store, pieceIndex) {
@@ -164,18 +164,18 @@ function readPieceImp(iterator, callback) {
     if (iterator.hasNext()) {
         fragment = iterator.next();
         ensureFile(fragment.file, function (error, file) {
-		    if (error) {
-				callback(error);
-			} else {	
-	            fs.read(file.fd, fragment.length, fragment.offset, 'binary',
-	                function (err, data, bytesRead) {
-	                    var fragment;
-	                    callback(err, data);
-	                    if (! err) {
-	                        readPieceImp(iterator, callback);
-	                    }
-	                });
-			}
+            if (error) {
+                callback(error);
+            } else {
+                fs.read(file.fd, fragment.length, fragment.offset, 'binary',
+                    function (err, data, bytesRead) {
+                        var fragment;
+                        callback(err, data);
+                        if (! err) {
+                            readPieceImp(iterator, callback);
+                        }
+                    });
+            }
         });
     } else {
         callback(null, null);
@@ -195,12 +195,6 @@ function pieceLength(store, pieceIndex) {
     }
 }
 
-function markPieceGood(store, pieceIndex) {
-    store.pieceMap[pieceIndex] = true;
-    sortedArray.remove(store.badPieces, pieceIndex);
-    sortedArray.add(store.goodPieces, pieceIndex);
-}
-
 function inspectImp(store, pieceIndex, hash, callback) {
     readPiece(store, 0, function (error, data) {
         var digest, expected, goodPiece;
@@ -212,14 +206,11 @@ function inspectImp(store, pieceIndex, hash, callback) {
             } else {
                 digest = hash.digest('binary');
                 expected = store.pieces.substring(pieceIndex * 20, (pieceIndex + 1) * 20);
-				goodPiece = expected === digest;
-                store.pieceMap.push(goodPiece);
-				if (goodPiece) {
-					store.goodPieces.push(pieceIndex);
-				} else {
-					store.badPieces.push(pieceIndex);
-					store.left += pieceLength(store, pieceIndex);
-				}
+                goodPiece = expected === digest;
+                store.bitfield.set(pieceIndex, goodPiece);
+                if (!goodPiece) {
+                    store.left += pieceLength(store, pieceIndex);
+                }
                 pieceIndex += 1;
                 if (pieceIndex < store.pieceCount) {
                     hash = crypto.createHash('sha1');
@@ -235,10 +226,8 @@ function inspectImp(store, pieceIndex, hash, callback) {
 // callback(err)
 function inspect(store, callback) {
     var hash = crypto.createHash('sha1');
-	store.pieceMap = [];
-	store.goodPieces = [];
-	store.badPieces = [];
-	store.left = 0;
+    store.bitfield = bitfield.create(store.pieceCount);
+    store.left = 0;
     inspectImp(store, 0, hash, callback);
 }
 
