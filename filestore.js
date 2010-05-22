@@ -100,55 +100,113 @@ function createRangeIterator(store, offset, length) {
     };
 }
 
-// Calls callback(err, file)
-function ensureFile(file, callback) {
-    var mode = 6 * 64 + 4 * 8 + 4; // 0644 aka rw-r--r--
-    if (file.fd) {
-        callback(null, file);
+// Makes sure all the directories exist for a given path.
+// If they don't exist, tries to create them.
+// Calls callback(err)
+function ensureDirExists(fullPath, callback) {
+    var mode = 7 * 64 + 7 * 8 + 7; // 0777 aka rwxrwxrwx-
+    var parts = fullPath.split('/'), root;
+    if (parts.length > 1) {
+        parts.pop();
+        if (fullPath.charAt(0) == '/') {
+            root = '';
+        } else {
+            root = '.';
+        }
+        ensureDirExists2(root, parts, callback);
     } else {
-        fs.stat(file.path, function (err, stats) {
+        callback(null);
+    }
+    function ensureDirExists2(base, dirList, callback) {
+        var newPath = base + '/' + dirList.shift();
+        fs.stat(newPath, function (err, stats) {
             if (err) {
-                fs.open(file.path, 'w', mode, function (error, fd) {
-                    if (error) {
-                        callback(error, file);
+                makeDir();
+            } else if (!stats.isDirectory()) {
+                fs.unlink(newPath, function(err) {
+                    if (err) {
+                        callback(err);
                     } else {
-                        fs.truncate(fd, file.length, function (error) {
-                            if (error) {
-                                callback(error, file);
-                            } else {
-                                // Need to close this descriptor and try again.
-                                fs.close(fd, function (error) {
-                                    if (error) {
-                                        callback(error, file);
-                                    }
-                                    ensureFile(file, callback);
-                                });
-                            }
-                        });
-                    }
-                });
-            } else if (stats.isDirectory() || stats.size !== file.length) {
-                fs.unlink(file.path, function (error) {
-                    if (error) {
-                        callback(error, file);
-                    } else {
-                        ensureFile(file, callback);
+                        makeDir();
                     }
                 });
             } else {
-                // file exists, and is right length and type
-                fs.open(file.path, 'r+', mode, function (error, fd) {
-                    if (error) {
-                        callback(error, file);
-                    } else {
-                        file.fd = fd;
-                        callback(error, file);
-                    }
-                });
+                checkKids();
+            }
+        });
+        function makeDir() {
+            fs.mkdir(newPath, mode, checkKids);
+        }
+        function checkKids(err) {
+            if (err || dirList.length == 0) {
+                callback(err);
+            } else {
+                ensureDirExists2(newPath, dirList, callback);
+            }
+        }
+    }
+}
+
+function ensureFile2(file, callback) {
+    var mode = 6 * 64 + 4 * 8 + 4; // 0666 aka rw-rw-rw-
+    fs.stat(file.path, function (err, stats) {
+        if (err) {
+            fs.open(file.path, 'w', mode, function (error, fd) {
+                if (error) {
+                    callback(error, file);
+                } else {
+                    fs.truncate(fd, file.length, function (error) {
+                        if (error) {
+                            callback(error, file);
+                        } else {
+                            // Need to close this descriptor and try again.
+                            fs.close(fd, function (error) {
+                                if (error) {
+                                    callback(error, file);
+                                }
+                                ensureFile2(file, callback);
+                            });
+                        }
+                    });
+                }
+            });
+        } else if (stats.isDirectory() || stats.size !== file.length) {
+            fs.unlink(file.path, function (error) {
+                if (error) {
+                    callback(error, file);
+                } else {
+                    ensureFile2(file, callback);
+                }
+            });
+        } else {
+            // file exists, and is right length and type
+            fs.open(file.path, 'r+', mode, function (error, fd) {
+                if (error) {
+                    callback(error, file);
+                } else {
+                    file.fd = fd;
+                    callback(error, file);
+                }
+            });
+        }
+    });
+}
+
+//Calls callback(err, file)
+function ensureFile(file, callback) {
+    if (file.fd) {
+        callback(null, file);
+    } else {
+        ensureDirExists(file.path, function (err) {
+            if (err) {
+                callback(err, file);
+            } else {
+                ensureFile2(file, callback);
             }
         });
     }
 }
+
 
 function createPieceFragmentIterator(store, pieceIndex) {
     var pieceLength = store.pieceLength,

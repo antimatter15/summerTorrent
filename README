@@ -13,11 +13,15 @@ Implemented features:
 + Scan disk to compute good/bad pieces for data files.
 + Request peer list from tracker.
 + Parse tracker response.
++ Connect to peers.
++ Initial peer header exchange.
++ Create directories for multi-file torrents.
 
 TODO:
 - UPNP open a port for listening for peers.
+- socks proxy support.
 - Handle redirects from trackers.
-- Create directories for multi-file torrents.
 - Listen for peers.
-- Connect to peers.
+- Handle peer requests.
+- Decide which pieces to request.
 - Exchange data with peers.

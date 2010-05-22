@@ -20,6 +20,7 @@ function create(key, host, port, torrent) {
             host: host,
             port: port,
             stream: stream,
+            requests : [],
             checkHeader: function(text) {
                 return (text.substring(0,20) === header
                         && text.substring(28,48) === this.torrent.metaInfo.info_hash);
@@ -46,18 +47,19 @@ function create(key, host, port, torrent) {
     stream.addListener('data', function(data) {
         sys.log('got data from ' + host);
 
-        function readBigEndianInt(s) {
-            if (s.length < 4) {
+        function readInt(s, offset) {
+            offset = offset || 0;
+            if (s.length < offset + 4) {
                 throw 'expected 4 bytes.';
             }
-            return (s.charCodeAt(0) << 24)
-                | (s.charCodeAt(1) << 16)
-                | (s.charCodeAt(2) << 8)
-                | s.charCodeAt(3);
+            return (s.charCodeAt(offset) << 24)
+                | (s.charCodeAt(offset + 1) << 16)
+                | (s.charCodeAt(offset + 2) << 8)
+                | s.charCodeAt(offset + 3);
         }
 
         function doHave(data) {
-            var piece = readBigEndianInt(data);
+            var piece = readInt(data);
             // sys.log('have ' + piece);
             goodPieces.set(piece, true);
         }
@@ -65,6 +67,28 @@ function create(key, host, port, torrent) {
         function doBitfield(data) {
             // sys.log('bitfield');
             goodPieces.setWire(data);
+        }
+
+        function doRequest(data) {
+            var index = readInt(data, 0),
+                offset = readInt(data, 4),
+                length = readInt(data, 8),
+                pieceLength = torrent.store.pieceLength,
+                pieceCount = torrent.store.pieceCount;
+            if (! ((offset >= 0 && offset + length <= pieceLength)
+                    && (length > 0 && length <= 32 * 1024)
+                    && (index >= 0 && index < pieceCount)) ) {
+                throw "request bad parameters";
+            }
+            peer.requests.push({index : index, offset : offset, length : length});
+        }
+
+        function doPiece(data) {
+
+        }
+
+        function doCancel(data) {
+
         }
 
         // returns true if a message was processed
@@ -88,7 +112,7 @@ function create(key, host, port, torrent) {
             if (input.length < 4) {
                 return false;
             }
-            dataLen = readBigEndianInt(input);
+            dataLen = readInt(input);
             if (input.length < dataLen + 4) {
                 return false;
             }
@@ -115,11 +139,11 @@ function create(key, host, port, torrent) {
                 } else if (id == 5) {
                     doBitfield(payload);
                 } else if (id == 6) {
-                    sys.log(host + " request");
+                    doRequest(payload);
                 } else if (id == 7) {
-                    sys.log(host + " piece");
+                    doPiece(payload);
                 } else if (id == 8) {
-                    sys.log(host + " cancel");
+                    doCancel(payload);
                 } else if (id == 9) {
                     sys.log(host + " DHT listen-port");
                 } else {
