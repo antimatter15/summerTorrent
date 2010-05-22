@@ -2,7 +2,7 @@ var bitfield = require('./bitfield'),
     net = require('net'),
     sys = require('sys');
 
-function create(key, host, port, torrent) {
+exports.create = function create(key, host, port, torrent) {
     sys.log('peer.create ' + host + ':' + port);
     var stream = net.createConnection(port, host),
         header = String.fromCharCode(19) + 'BitTorrent protocol',
@@ -69,26 +69,70 @@ function create(key, host, port, torrent) {
             goodPieces.setWire(data);
         }
 
-        function doRequest(data) {
+        function readRequest(data) {
             var index = readInt(data, 0),
-                offset = readInt(data, 4),
-                length = readInt(data, 8),
-                pieceLength = torrent.store.pieceLength,
-                pieceCount = torrent.store.pieceCount;
-            if (! ((offset >= 0 && offset + length <= pieceLength)
+            begin = readInt(data, 4),
+            length = readInt(data, 8),
+            pieceLength = torrent.store.pieceLength,
+            pieceCount = torrent.store.pieceCount;
+            if (! ((begin >= 0 && begin + length <= pieceLength)
                     && (length > 0 && length <= 32 * 1024)
                     && (index >= 0 && index < pieceCount)) ) {
                 throw "request bad parameters";
             }
-            peer.requests.push({index : index, offset : offset, length : length});
+            return {index : index, begin : begin, length : length};
+        }
+
+        function requestEqual(a, b) {
+            return a.index == b.index &&
+                a.begin == b.begin &&
+                a.length == b.length;
+        }
+
+        function doRequest(data) {
+            var request = readRequest(data),
+                requests = peer.requests,
+                r, i, len = requests.length;
+            for (i = 0; i < len; i += 1) {
+                r = requests[i];
+                if (requestEqual(r, request)) {
+                    // duplicate request.
+                    return;
+                }
+            }
+            requests.push(request);
         }
 
         function doPiece(data) {
-
+            var index = readInt(data, 0),
+                begin = readInt(data, 4),
+                block = data.substring(8),
+                length = block.length,
+                pieceLength = torrent.store.pieceLength,
+                pieceCount = torrent.store.pieceCount;
+            if (! ((begin >= 0 && begin + length <= pieceLength)
+                    && (length > 0 && length <= 32 * 1024)
+                    && (index >= 0 && index < pieceCount)) ) {
+                throw "piece bad parameters";
+            }
+            sys.log("received piece " + index +' ' + begin + ' ' + length);
+            torrent.store.writePiecePart(torrent.store, index, begin, block,
+                    function(err) {
+                        sys.log('Wrote piece ' + err);
+            });
         }
 
         function doCancel(data) {
-
+            var request = readRequest(data),
+            requests = peer.requests,
+            r, i, len = requests.length;
+            for (i = 0; i < len; i += 1) {
+                r = requests[i];
+                if (requestEqual(r, request)) {
+                    request.splice(i, 1);
+                    return;
+                }
+            }
         }
 
         // returns true if a message was processed
@@ -164,7 +208,51 @@ function create(key, host, port, torrent) {
             torrent.removePeer(key);
         }
     });
-    return peer;
-}
 
-exports.create = create;
+    function encodeInt(i) {
+        return String.fromCharCode(0xff & (i >> 24)) +
+            String.fromCharCode(0xff & (i >> 16)) +
+            String.fromCharCode(0xff & (i >> 8)) +
+            String.fromCharCode(0xff & i);
+    }
+
+    function writePacket(op, payload) {
+        if (op === 0) {
+            stream.write('\0\0\0\0', 'binary');
+        } else {
+            payload = payload || '';
+            stream.write(encodeInt(payload.length + 1)
+                    + String.fromCharCode(op) + payload,
+                    'binary');
+        }
+    }
+    peer.setChoke = function(state) {
+        if (state != amChoked) {
+            amChoked = state;
+            writePacket(state ? 0 : 1);
+        }
+    };
+    peer.setInterested = function(state) {
+        if (state != amInterested) {
+            amInterested = state;
+            writePacket(state ? 2 : 3);
+        }
+    };
+    peer.have = function(index) {
+        writePacket(4, encodeInt(index));
+    };
+    peer.sendBitfield = function(){
+        writePacket(5, torrent.store.goodPieces.getWire());
+    };
+    peer.sendRequest = function(index, begin, length) {
+        writePacket(6, encodeInt(index) + encodeInt(begin) + encodeInt(length));
+    };
+    peer.sendPiece = function(index, begin, data) {
+        writePacket(7, encodeInt(index) + encodeInt(begin) + data);
+    };
+    peer.sendCancel = function(index) {
+        writePacket(8, encodeInt(index));
+    };
+
+    return peer;
+};

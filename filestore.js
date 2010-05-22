@@ -1,5 +1,5 @@
 var sys = require('sys'),
-    bitfield = require('./bitfield');
+    bitfield = require('./bitfield'),
     fs = require('fs'),
     crypto = require('crypto'),
     path = require('path');
@@ -207,43 +207,79 @@ function ensureFile(file, callback) {
     }
 }
 
-
-function createPieceFragmentIterator(store, pieceIndex) {
+// begin and length are optional arguments.
+function createPieceFragmentIterator(store, pieceIndex, begin, length) {
     var pieceLength = store.pieceLength,
-        offset = pieceLength * pieceIndex,
-        length = Math.min(store.totalLength - offset, pieceLength);
+        offset = pieceLength * pieceIndex + begin,
+        length = Math.min(store.totalLength - offset, length);
     return createRangeIterator(store, offset, length);
 }
 
-// Callback called asynchronously, with args (error, data)
+// Callback called repeatedly with args (error, data)
 // data will be null after all fragments have been read.
 
-function readPieceImp(iterator, callback) {
-    var fragment;
-    if (iterator.hasNext()) {
-        fragment = iterator.next();
-        ensureFile(fragment.file, function (error, file) {
-            if (error) {
-                callback(error);
-            } else {
-                fs.read(file.fd, fragment.length, fragment.offset, 'binary',
-                    function (err, data, bytesRead) {
-                        var fragment;
-                        callback(err, data);
-                        if (! err) {
-                            readPieceImp(iterator, callback);
-                        }
-                    });
-            }
-        });
-    } else {
-        callback(null, null);
+function readPiecePart(store, pieceIndex, begin, length, callback) {
+    var iterator = createPieceFragmentIterator(store, pieceIndex, begin, length);
+    function readPieceImp() {
+        var fragment;
+        if (iterator.hasNext()) {
+            fragment = iterator.next();
+            ensureFile(fragment.file, function (error, file) {
+                if (error) {
+                    callback(error);
+                } else {
+                    fs.read(file.fd, fragment.length, fragment.offset, 'binary',
+                        function (err, data, bytesRead) {
+                            var fragment;
+                            callback(err, data);
+                            if (! err) {
+                                readPieceImp();
+                            }
+                        });
+                }
+            });
+        } else {
+            callback(null, null);
+        }
     }
+    readPieceImp();
 }
 
 function readPiece(store, pieceIndex, callback) {
-    var iterator = createPieceFragmentIterator(store, pieceIndex);
-    readPieceImp(iterator, callback);
+    readPiecePart(store, pieceIndex, 0, store.pieceLength, callback);
+}
+
+//Callback (error)
+
+function writePiecePart(store, pieceIndex, begin, data, callback) {
+ var iterator = createPieceFragmentIterator(store, pieceIndex, begin, data.length);
+ function writePieceImp() {
+     var fragment;
+     if (iterator.hasNext()) {
+         fragment = iterator.next();
+         ensureFile(fragment.file, function (error, file) {
+             var dataFrag;
+             if (error) {
+                 callback(error);
+             } else {
+                 dataFrag = data.substring(0, fragment.length);
+                 data = data.substring(fragment.length);
+                 fs.write(file.fd, dataFrag, fragment.offset, 'binary',
+                     function (err, bytesWritten) {
+                         var fragment;
+                         if (err) {
+                             callback(err);
+                         } else {
+                             writePieceImp();
+                         }
+                     });
+             }
+         });
+     } else {
+         callback(null);
+     }
+ }
+ writePieceImp();
 }
 
 function pieceLength(store, pieceIndex) {
@@ -292,3 +328,6 @@ function inspect(store, callback) {
 
 exports.create = create;
 exports.inspect = inspect;
+exports.readPiecePart = readPiecePart;
+exports.writePiecePart = writePiecePart;
+
