@@ -60,12 +60,12 @@ exports.create = function create(key, host, port, torrent) {
 
         function doHave(data) {
             var piece = readInt(data);
-            // sys.log('have ' + piece);
+            sys.log('have ' + piece);
             goodPieces.set(piece, true);
         }
 
         function doBitfield(data) {
-            // sys.log('bitfield');
+            sys.log('bitfield');
             goodPieces.setWire(data);
         }
 
