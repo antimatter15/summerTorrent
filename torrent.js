@@ -11,8 +11,9 @@ function create(torrentPath, destDir) {
     return {
         torrentPath: torrentPath,
         destDir: destDir,
-        listenerPort: 6881,
-        peerId: '01234567899876543210',
+        listenerPort: 6882,
+        peerId: ('-JS0001-'+Math.random().toString(36).substr(3)
+                       +Math.random().toString(36).substr(3)).substr(0, 20),
         peers: {},
         store: {},
         metaInfo: {},
@@ -24,6 +25,7 @@ function create(torrentPath, destDir) {
                     port: this.listenerPort,
                     uploaded: 0,
                     downloaded: 0,
+                    numwant: 50,
                     left: this.store.left,
                     compact:1,
                     event:'started'
@@ -32,7 +34,9 @@ function create(torrentPath, destDir) {
                 var newPeers, numPeers, i, interval = 3600;
                 if (!error) {
                     interval = Math.max(interval, response.interval);
+                    sys.puts(JSON.stringify(response))
                     newPeers = response.peers;
+                    
                     numPeers = Math.floor(newPeers.length / 6);
                     sys.log('Tracker gave us ' + numPeers + ' peers.');
                     for (i = 0; i < numPeers; i++ ) {
