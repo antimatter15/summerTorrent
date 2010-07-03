@@ -117,23 +117,24 @@ function create(torrentPath, destDir) {
 												//ineed=that.peers[i].getBitfield.getWire() & (~that.store.goodPieces);
 												sys.log('Peer '+that.peers[i].host+':'+that.peers[i].port+
 												' has these pieces: '+that.peers[i].getBitfield().getBitArray().join(''));
-												
-												//hey why not do a totally unoptimized super duper crappy whatnot
-												
 											}
-											var pieces = {};
-											for(var i in that.peers) {
-											  that.peers[i].getBitfield().getBitArray().forEach(function(v, i){
-											    pieces[i] = (pieces[i] || 0) + v;
+											//hey why not do a totally unoptimized super duper crappy whatnot
+											var pieces = {
+											  //piece_index: number_of_peers_have_it
+											};
+											for(var i in that.peers) { //iterate through peers,
+											  that.peers[i].getBitfield().getBitArray().forEach(function(v, i){ //loop through their bitfield
+											    pieces[i] = (pieces[i] || 0) + (+v); //add it to a map of pieces (since zero = dont have, 1 = have, adding works)
 											  })
 											}
-											var pieces_array = [];
-											that.store.goodPieces.getBitArray().forEach(function(v, i){
-											  if(v == 0) pieces_array.push(i);
+											var pieces_array = []; 
+											that.store.goodPieces.getBitArray().forEach(function(v, i){ //loop through my bitfield
+											  if(v == 0) pieces_array.push(i); //if I don't have it, then add the index to pieces array
 											});
 											pieces_array.sort(function(a, b){
-											  return pieces[a] - pieces[b];
+											  return pieces[a] - pieces[b]; //sort the pieces that I don't have by the number of people who have it
 											});
+											//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 											sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '))
 											
 										},
