@@ -2,16 +2,40 @@ var sys = require('sys'),
     torrent = require('./torrent');
     
 String.prototype.toBinary = function() {
-	ret='';
-	for(i=0;i<this.length;i++){
+	var ret='';
+	for(var i=0;i<this.length;i++){
 		ret+=this.charCodeAt(i).toString(2);
 	}
 	return ret;
 }
 
+//here's antimatter15's implementation, i think they're better
+//because at least it works with a fairly fundamental concept
+//that binaryToString(stringToBinary(x)) == x;
+//logically it does not work with unicodey things
+function stringToBinary(bytes) {
+    var i, b = [];
+    for (i = 0; i < bytes.length; i++) {
+        b[i] = bytes.charCodeAt(i) & 0xff;
+    }
+    return b.map(function(v){
+      return v.toString(2)
+    }).join('')/*.split('').map(function(v){
+      return +v;
+    });*/
+};
+
+function binaryToString(bytes){ //as a string
+  if(bytes % 7) throw "poop";
+  for(var ret = '',l = bytes.length, i = 0; i < l; i+= 7){
+    ret += String.fromCharCode(parseInt(bytes.substr(i, 7),2))
+  }
+  return ret;
+}
+
 String.prototype.fromBinary = function() {
-	ret='';
-	for(i=0;i<this.length;i++){
+	var ret='';
+	for(var i=0;i<this.length;i++){
 		ret+=String.fromCharCode(parseInt(this.charAt(i)));
 	}
 	return ret;
