@@ -52,6 +52,11 @@ exports.create = function (n, bytes) {
                 bytes += String.fromCharCode(b[i]);
             }
             return bytes;
+        },
+		getBitArray: function(){
+			return b.map(function(val) {
+				return val.toString(2);
+			}).join('').split('');
         }
     };
 };

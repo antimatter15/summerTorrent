@@ -21,11 +21,20 @@ exports.create = function create(key, host, port, torrent) {
             port: port,
             stream: stream,
             requests : [],
+            isChoked: function() {
+				return peerChoked;
+			},
+            getBitfield: function() {
+				return goodPieces;
+			},
+			isInterested: function() {
+				return peerInterested;
+			},
             checkHeader: function(text) {
                 return (text.substring(0,20) === header
                         && text.substring(28,48) === this.torrent.metaInfo.info_hash);
             }
-    };
+		};
 
     stream.setEncoding('binary');
     stream.addListener('connect', function() {
@@ -199,6 +208,7 @@ exports.create = function create(key, host, port, torrent) {
             return true;
 
         };
+        
         input += data;
         try {
             while (processMessage());

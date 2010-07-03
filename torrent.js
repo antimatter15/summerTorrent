@@ -110,6 +110,17 @@ function create(torrentPath, destDir) {
                                     listener.create(that.listenerPort, [that.metaInfo.info_hash]);
                                     that.trackerClient = tracker.create(that.metaInfo);
                                     that.pingTracker();
+                                    
+                                    setInterval(function() {
+											var peers=[];
+											for(var i in that.peers) {
+												//ineed=that.peers[i].getBitfield.getWire() & (~that.store.goodPieces);
+												sys.log('Peer '+that.peers[i].host+':'+that.peers[i].port+
+												' has these pieces: '+that.peers[i].getBitfield().getBitArray().join(''));
+											}
+										},
+									1000);
+                                    
                                 }
                             });
                         }
