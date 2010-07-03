@@ -53,10 +53,11 @@ exports.create = function (n, bytes) {
             }
             return bytes;
         },
-		    getBitArray: function(){
-		      for(var i = 0,r = []; i < n; i++)
-		        r.push(ret.get(i));
-		      return r;
+		getBitArray: function() {
+            for(var i = 0,r = []; i < n; i++) {
+                r.push(ret.get(i));
+            }
+            return r;
 	        /*
 		      return b.map(function(val) {
 			      return val.toString(2);
