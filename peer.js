@@ -128,6 +128,11 @@ exports.create = function create(key, host, port, torrent) {
             filestore.writePiecePart(torrent.store, index, begin, block,
                     function(err) {
                         sys.log('Wrote piece ' + (err||"NO ERRORS FTW!"));
+                        
+                        if(pieceLength-(begin+block.length) == 0){
+                          sys.log('methinks its the last piece, todo: verification or whatnot + also probably wont work nonsequentially');
+                          torrent.store.goodPieces.set(index, 1); //change bitfield
+                        }
             });
         }
 

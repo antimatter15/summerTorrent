@@ -126,11 +126,16 @@ function create(torrentPath, destDir) {
 											that.store.goodPieces.getBitArray().forEach(function(v, i){ //loop through my bitfield
 											  if(v == 0) pieces_array.push(i); //if I don't have it, then add the index to pieces array
 											});
+											
+											var completion = (pieces_array.length/that.store.pieceCount)
+											
+											sys.log("Torrent at "+(Math.floor(completion * 100 * 100)/100)+"% completion");
+											
 											pieces_array.sort(function(a, b){
 											  return pieces[a] - pieces[b]; //sort the pieces that I don't have by the number of people who have it
 											});
 											//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
-											//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '))
+											sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 											
 											[pieces_array[0]].forEach(function(val, index) {
 												for(i in that.peers) {
