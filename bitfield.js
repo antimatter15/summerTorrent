@@ -54,7 +54,7 @@ exports.create = function (n, bytes) {
             return bytes;
         },
 		    getBitArray: function(){
-		      for(var i = 0,r = []; i < byteLen; i++)
+		      for(var i = 0,r = []; i < n; i++)
 		        r.push(ret.get(i));
 		      return r;
 	        /*
