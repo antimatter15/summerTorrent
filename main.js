@@ -1,5 +1,21 @@
 var sys = require('sys'),
     torrent = require('./torrent');
+    
+String.prototype.toBinary = function() {
+	ret='';
+	for(i=0;i<this.length;i++){
+		ret+=this.charCodeAt(i).toString(2);
+	}
+	return ret;
+}
+
+String.prototype.fromBinary = function() {
+	ret='';
+	for(i=0;i<this.length;i++){
+		ret+=String.fromCharCode(parseInt(this.charAt(i)));
+	}
+	return ret;
+}
 
 function parseArgs(args) {
     var result = {destDir:'.'},
