@@ -132,8 +132,9 @@ exports.create = function create(key, host, port, torrent) {
                         if(pieceLength-(begin+block.length) == 0){
                           sys.log('methinks its the last piece, todo: verification or whatnot + also probably wont work nonsequentially');
                           torrent.store.goodPieces.set(index, 1); //change bitfield
-                          peer.have(index);
-                        
+                          for(var i in torrent.peers){
+                            torrent.peers[i].have(index);
+                          }
                         }
                         
                         
