@@ -127,13 +127,14 @@ function create(torrentPath, destDir) {
 											  if(v == 0) pieces_array.push(i); //if I don't have it, then add the index to pieces array
 											});
 											
-											var completion = (pieces_array.length/that.store.pieceCount)
+											var completion = 1-(pieces_array.length/that.store.pieceCount)
 											
 											sys.log("Torrent at "+(Math.floor(completion * 100 * 100)/100)+"% completion");
 											
 											pieces_array.sort(function(a, b){
 											  return pieces[a] - pieces[b]; //sort the pieces that I don't have by the number of people who have it
 											});
+											
 											//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 											sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 											

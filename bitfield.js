@@ -24,7 +24,7 @@ exports.create = function (n, bytes) {
         }
     };
     stringToArray(bytes);
-    return {
+    var ret =  {
         set: function(index, val) {
             if (!(index >= 0 && index < n)) {
                 throw "bad index " + index;
@@ -34,7 +34,7 @@ exports.create = function (n, bytes) {
                 v = b[i];
             b[i] = v & (~m) | (val ? m : 0);
         },
-        get: function(index, val) {
+        get: function(index) {
             if (!(index >= 0 && index < n)) {
                 throw "bad index " + index;
             }
@@ -53,10 +53,17 @@ exports.create = function (n, bytes) {
             }
             return bytes;
         },
-		getBitArray: function(){
-			return b.map(function(val) {
-				return val.toString(2);
-			}).join('').split('');
-        }
+		    getBitArray: function(){
+		      for(var i = 0,r = []; i < byteLen; i++)
+		        r.push(ret.get(i));
+		      return r;
+	        /*
+		      return b.map(function(val) {
+			      return val.toString(2);
+		      }).join('').split('');
+		      */
+        }  
     };
+    
+    return ret;
 };
