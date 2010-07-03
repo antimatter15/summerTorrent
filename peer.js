@@ -125,9 +125,9 @@ exports.create = function create(key, host, port, torrent) {
                 throw "piece bad parameters";
             }
             sys.log("received piece " + index +' ' + begin + ' ' + length);
-            torrent.store.writePiecePart(torrent.store, index, begin, block,
+            filestore.writePiecePart(torrent.store, index, begin, block,
                     function(err) {
-                        sys.log('Wrote piece ' + err);
+                        sys.log('Wrote piece ' + (err||"NO ERRORS FTW!"));
             });
         }
 
