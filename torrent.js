@@ -112,12 +112,7 @@ function create(torrentPath, destDir) {
                                     that.pingTracker();
                                     
                                     setInterval(function() {
-											var peers=[];
-											for(var i in that.peers) {
-												//ineed=that.peers[i].getBitfield.getWire() & (~that.store.goodPieces);
-												sys.log('Peer '+that.peers[i].host+':'+that.peers[i].port+
-												' has these pieces: '+that.peers[i].getBitfield().getBitArray().join(''));
-											}
+
 											//hey why not do a totally unoptimized super duper crappy whatnot
 											var pieces = {
 											  //piece_index: number_of_peers_have_it
@@ -135,7 +130,23 @@ function create(torrentPath, destDir) {
 											  return pieces[a] - pieces[b]; //sort the pieces that I don't have by the number of people who have it
 											});
 											//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
-											sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '))
+											//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '))
+											
+											[pieces_array[0]].forEach(function(val, index) {
+												for(i in that.peers) {
+													if(that.peers[i].getBitfield().getBitArray()[val]) {
+														that.peers[i].setInterested(true);
+														
+														for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
+															that.peers[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
+															sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
+														}
+														
+														sys.log('requested for part '+val);
+														break;
+													}
+												}
+											});
 											
 										},
 									5000);
