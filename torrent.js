@@ -117,9 +117,27 @@ function create(torrentPath, destDir) {
 												//ineed=that.peers[i].getBitfield.getWire() & (~that.store.goodPieces);
 												sys.log('Peer '+that.peers[i].host+':'+that.peers[i].port+
 												' has these pieces: '+that.peers[i].getBitfield().getBitArray().join(''));
+												
+												//hey why not do a totally unoptimized super duper crappy whatnot
+												
 											}
+											var pieces = {};
+											for(var i in that.peers) {
+											  that.peers[i].getBitfield().getBitArray().forEach(function(v, i){
+											    pieces[i] = (pieces[i] || 0) + v;
+											  })
+											}
+											var pieces_array = [];
+											that.store.goodPieces.getBitArray().forEach(function(v, i){
+											  if(v == 0) pieces_array.push(i);
+											});
+											pieces_array.sort(function(a, b){
+											  return pieces[a] - pieces[b];
+											});
+											sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '))
+											
 										},
-									1000);
+									5000);
                                     
                                 }
                             });
