@@ -160,7 +160,7 @@ function create(torrentPath, destDir) {
 											});
 											
 										},
-									5000);
+									500);
                                     
                                 }
                             });
