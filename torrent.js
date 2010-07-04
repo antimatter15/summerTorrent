@@ -137,7 +137,7 @@ function create(torrentPath, destDir) {
 										// Delete any pieces that are in request queue
 										// & Purge pieces queue of any pieces > 120 seconds after requested not recieved.
 										for(i in that.piecesQueue) {
-											if(that.piecesQueue[i] < (new Date().getTime() - 2*60*60*1000)) {
+											if(that.piecesQueue[i] < (new Date().getTime() - 10*1000)) {
 												delete that.piecesQueue[i];
 												sys.log('Piece #'+i+' timed out');
 												return;
@@ -161,8 +161,8 @@ function create(torrentPath, destDir) {
 										});
 										
 										//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
-										//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
-										
+										//sys.log('Pieces sorted by availability (rarest first). ('+pieces_array.length+') :'+pieces_array.join(', '));
+
 										var peers_random=[];
 										for(i in that.peers) {
 											peers_random.push(that.peers[i]);
@@ -174,11 +174,13 @@ function create(torrentPath, destDir) {
 											for(i=0; i<peers_random.length; i++) { // Crude non-even shuffling algorithm
 												if(peers_random[i].getBitfield().getBitArray()[val]) {
 													peers_random[i].setInterested(true);
+													var piecelength = (val == that.store.pieceCount - 1)?that.store.lastPieceLength:that.store.pieceLength;
 													
-													for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
-														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
+													for(var start=0;start<piecelength;start+=Math.pow(2,15)) {
+														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start)));
 														// Too verbose
-														//sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
+														sys.log('requesting ('+[val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start))].join(', ')+')');
+														
 													}
 													
 													// Add piece to the list of pieces that are being queued.
@@ -220,7 +222,7 @@ function create(torrentPath, destDir) {
 										}
 										
 										
-									}, 2000);
+									}, 500);
                                     
                                 }
                             });
