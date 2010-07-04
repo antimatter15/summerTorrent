@@ -135,7 +135,13 @@ function create(torrentPath, destDir) {
 												delete that.piecesQueue[i];
 												
 												for(j in that.peers) {
-													that.peers[j].sendCancel(i);
+													
+													var piecelength = (i == that.store.pieceCount - 1)?that.store.lastPieceLength:that.store.pieceLength;
+													
+													for(var start=0;start<piecelength;start+=Math.pow(2,15)) {
+														that.peers[j].sendCancel(i, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start)));
+														
+													}
 												}
 												
 												sys.log('Piece #'+i+' timed out');
@@ -188,7 +194,6 @@ function create(torrentPath, destDir) {
 													peers_random[i].setChoke(false);
 													
 													var piecelength = (val == that.store.pieceCount - 1)?that.store.lastPieceLength:that.store.pieceLength;
-
 													
 													for(var start=0;start<piecelength;start+=Math.pow(2,15)) {
 														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start)));

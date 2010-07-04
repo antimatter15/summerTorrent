@@ -44,6 +44,7 @@ exports.create = function create(key, host, port, torrent) {
         stream.write(firstPacket, 'binary');
     });
     stream.setNoDelay();
+    stream.setTimeout(0);
     stream.addListener('error', function(e) {
         sys.log('peer error ' + host + ':' + port + ' ' + e);
         stream.end();
@@ -287,8 +288,8 @@ exports.create = function create(key, host, port, torrent) {
     peer.sendPiece = function(index, begin, data) {
         writePacket(7, encodeInt(index) + encodeInt(begin) + data);
     };
-    peer.sendCancel = function(index) {
-        writePacket(8, encodeInt(index));
+    peer.sendCancel = function(index, begin, length) {
+        writePacket(8, encodeInt(index) + encodeInt(begin) + encodeInt(length));
     };
     peer.sendKeepalive = function() {
 		writePacket(0);
