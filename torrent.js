@@ -17,6 +17,7 @@ function create(torrentPath, destDir) {
         peers: {},
         store: {},
         metaInfo: {},
+        piecesQueue: {},
         pingTracker: function () {
             var that = this,
                 params = {
@@ -112,56 +113,79 @@ function create(torrentPath, destDir) {
                                     that.pingTracker();
                                     
                                     setInterval(function() {
+										
+										
 
-											//hey why not do a totally unoptimized super duper crappy whatnot
-											var pieces = {
-											  //piece_index: number_of_peers_have_it
-											};
-											for(var i in that.peers) { //iterate through peers,
-											  that.peers[i].getBitfield().getBitArray().forEach(function(v, i){ //loop through their bitfield
-											    pieces[i] = (pieces[i] || 0) + (+v); //add it to a map of pieces (since zero = dont have, 1 = have, adding works)
-											  })
+										//hey why not do a totally unoptimized super duper crappy whatnot
+										var pieces = {
+										  //piece_index: number_of_peers_have_it
+										};
+										
+										/* Find all the pieces that the peers have */
+										for(var i in that.peers) { //iterate through peers,
+										  that.peers[i].getBitfield().getBitArray().forEach(function(val, index){ //loop through their bitfield
+											pieces[index] = (pieces[index] || 0) + (+val); //add it to a map of pieces (since zero = dont have, 1 = have, adding works)
+										  })
+										}
+										
+										// Delete any pieces that are in request queue
+										// & Purge pieces queue of any pieces > 120 seconds after requested not recieved.
+										for(i in that.piecesQueue) {
+											if(that.piecesQueue[i] < (new Date().getTime() - 2*60*60*1000)) {
+												delete that.piecesQueue[i];
+												return;
 											}
-											var pieces_array = []; 
-											that.store.goodPieces.getBitArray().forEach(function(v, i){ //loop through my bitfield
-											  if(v == 0){
-											    //sys.log('piece index: '+i+' == i no haz');
-											    pieces_array.push(i); //if I don't have it, then add the index to pieces array
-										    }else{
-											    //sys.log('piece index: '+i+' == i haz');
-										    }
-											});
-											
-											var completion = 1-(pieces_array.length/that.store.pieceCount)
-											
-											sys.log("Torrent at "+(Math.floor(completion * 100 * 100)/100)+"% completion (total pieces: "+that.store.pieceCount+')');
-											
-											pieces_array.sort(function(a, b){
-											  return pieces[a] - pieces[b]; //sort the pieces that I don't have by the number of people who have it
-											});
-											
-											//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
-											//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
-											
-											//[pieces_array[0]].forEach(function(val, index) {
-											pieces_array.slice(0, 5).forEach(function(val, index) {
-												for(i in that.peers) {
-													if(that.peers[i].getBitfield().getBitArray()[val]) {
-														that.peers[i].setInterested(true);
-														
-														for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
-															that.peers[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
-															sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
-														}
-														
-														sys.log('requested for part '+val);
-														break;
+											delete pieces[i];
+											sys.log('Deleted piece '+i);
+										};
+																				
+										var pieces_array = [];
+										that.store.goodPieces.getBitArray().forEach(function(v, i){ //loop through my bitfield
+											if(v == 0 && pieces[i]){
+												//sys.log('piece index: '+i+' == i no haz');
+												pieces_array.push(i); //if I don't have it, and somebody else haz it, then add the index to pieces array
+											} else {
+												//sys.log('piece index: '+i+' == i haz');
+											}
+										});
+										
+																					
+										pieces_array.sort(function(a, b){
+											return pieces[a] - pieces[b]; //sort the pieces that I don't have by the number of people who have it
+										});
+										
+										//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
+										//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
+										
+										//[pieces_array[0]].forEach(function(val, index) {
+										pieces_array.slice(0, 5).forEach(function(val, index) {
+											for(i in that.peers.sort(function() { return Math.random()-.5; })) { // Crude non-even shuffling algorithm
+												if(that.peers[i].getBitfield().getBitArray()[val]) {
+													that.peers[i].setInterested(true);
+													
+													for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
+														that.peers[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
+														sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
 													}
+													
+													// Add piece to the list of pieces that are being queued.
+													that.piecesQueue[val]=new Date().getTime();
+													
+													sys.log('requested for part '+val);
+													break;
 												}
-											});
-											
-										},
-									5000);
+											}
+										});
+										
+										
+										
+										var completion = 1-(pieces_array.length/that.store.pieceCount)
+										
+										sys.log("Torrent at "+(Math.floor(completion * 100 * 100)/100)+"% completion (total pieces: "+that.store.pieceCount+')');
+
+										
+										
+									}, 5000);
                                     
                                 }
                             });
