@@ -143,7 +143,8 @@ function create(torrentPath, destDir) {
 											//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 											//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 											
-											[pieces_array[0]].forEach(function(val, index) {
+											//[pieces_array[0]].forEach(function(val, index) {
+											pieces_array.slice(0, 5).forEach(function(val, index) {
 												for(i in that.peers) {
 													if(that.peers[i].getBitfield().getBitArray()[val]) {
 														that.peers[i].setInterested(true);
@@ -160,7 +161,7 @@ function create(torrentPath, destDir) {
 											});
 											
 										},
-									500);
+									5000);
                                     
                                 }
                             });
