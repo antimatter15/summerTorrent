@@ -245,10 +245,7 @@ exports.create = function create(key, host, port, torrent) {
     }
 
     function writePacket(op, payload) {
-<<<<<<< HEAD
-		
-=======
->>>>>>> 71784ef6eacfb30e93392c74b8fd0160eb8b3af6
+
 		try {
 			if (op === 0) {
 				stream.write('\0\0\0\0', 'binary');
@@ -258,13 +255,9 @@ exports.create = function create(key, host, port, torrent) {
 						+ String.fromCharCode(op) + payload,
 						'binary');
 			}
-<<<<<<< HEAD
-		} catch (e) {
-			sys.log(e);
-=======
+
 		} catch (err) {
 			sys.log(err);
->>>>>>> 71784ef6eacfb30e93392c74b8fd0160eb8b3af6
 		}
     }
     peer.setChoke = function(state) {
