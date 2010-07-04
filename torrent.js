@@ -113,6 +113,12 @@ function create(torrentPath, destDir) {
                                     that.pingTracker();
                                     
                                     setInterval(function() {
+
+										
+										if(Object.size(that.piecesQueue) > 50) { // Only have 50 pieces requested at the same time?
+											sys.log('Limiting queue to 50 requests');
+											return;
+										}
 										
 										
 
@@ -133,10 +139,10 @@ function create(torrentPath, destDir) {
 										for(i in that.piecesQueue) {
 											if(that.piecesQueue[i] < (new Date().getTime() - 2*60*60*1000)) {
 												delete that.piecesQueue[i];
+												sys.log('Piece #'+i+' timed out');
 												return;
 											}
 											delete pieces[i];
-											sys.log('Deleted piece '+i);
 										};
 																				
 										var pieces_array = [];
@@ -157,14 +163,20 @@ function create(torrentPath, destDir) {
 										//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 										//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 										
+										var peers_random=[];
+										for(i in that.peers) {
+											peers_random.push(that.peers[i]);
+										}
+										peers_random.sort(function() { return Math.random()-.5; });
+										
 										//[pieces_array[0]].forEach(function(val, index) {
 										pieces_array.slice(0, 5).forEach(function(val, index) {
-											for(i in that.peers.sort(function() { return Math.random()-.5; })) { // Crude non-even shuffling algorithm
-												if(that.peers[i].getBitfield().getBitArray()[val]) {
-													that.peers[i].setInterested(true);
+											for(i=0; i<peers_random.length; i++) { // Crude non-even shuffling algorithm
+												if(peers_random[i].getBitfield().getBitArray()[val]) {
+													peers_random[i].setInterested(true);
 													
 													for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
-														that.peers[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
+														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
 														sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
 													}
 													
@@ -177,15 +189,15 @@ function create(torrentPath, destDir) {
 											}
 										});
 										
+										var gotParts=that.store.goodPieces.getBitArray().filter(function(val) { return val=='1'; }).length;
+										var totalParts=that.store.pieceCount
 										
 										
-										var completion = 1-(pieces_array.length/that.store.pieceCount)
-										
-										sys.log("Torrent at "+(Math.floor(completion * 100 * 100)/100)+"% completion (total pieces: "+that.store.pieceCount+')');
+										sys.log(gotParts+"/"+totalParts+" Recieved  ("+(Math.floor((gotParts/totalParts) * 100 * 100)/100)+"%)");
 
 										
 										
-									}, 5000);
+									}, 1000);
                                     
                                 }
                             });

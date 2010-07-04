@@ -54,7 +54,8 @@ exports.create = function create(key, host, port, torrent) {
         torrent.removePeer(key);
     });
     stream.addListener('data', function(data) {
-        sys.log('got data from ' + host);
+		// Too verbose 
+        //sys.log('got data from ' + host);
 
         function readInt(s, offset) {
             offset = offset || 0;
@@ -124,14 +125,19 @@ exports.create = function create(key, host, port, torrent) {
                     && (index >= 0 && index < pieceCount)) ) {
                 throw "piece bad parameters";
             }
-            sys.log("received piece " + index +' ' + begin + ' ' + length);
+            //sys.log("received piece " + index +' ' + begin + ' ' + length); // Reduced verbosity
             filestore.writePiecePart(torrent.store, index, begin, block,
                     function(err) {
-                        sys.log('Wrote piece ' + (err||"NO ERRORS FTW!"));
+                        //sys.log('Wrote piece ' + (err||"NO ERRORS FTW!")); // Reduced verbosity.
                         
                         if(pieceLength-(begin+block.length) == 0){
-                          sys.log('methinks its the last piece, todo: verification or whatnot + also probably wont work nonsequentially');
+							/* Todo:
+							 * * Verification
+							 */
+                          sys.log('Wrote Piece #+'+index);
                           torrent.store.goodPieces.set(index, 1); //change bitfield
+                          delete torrent.piecesQueue[index]; // Delete from the pieces Queue
+                          
                           for(var i in torrent.peers){
                             torrent.peers[i].have(index);
                           }

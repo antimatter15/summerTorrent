@@ -9,6 +9,14 @@ String.prototype.toBinary = function() {
 	return ret;
 }
 
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
+
 //here's antimatter15's implementation, i think they're better
 //because at least it works with a fairly fundamental concept
 //that binaryToString(stringToBinary(x)) == x;
