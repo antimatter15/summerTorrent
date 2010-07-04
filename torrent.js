@@ -114,12 +114,12 @@ function create(torrentPath, destDir) {
                                     
                                     setInterval(function() {
 
-										
+										/*
 										if(Object.size(that.piecesQueue) > 50) { // Only have 50 pieces requested at the same time?
 											sys.log('Limiting queue to 50 requests');
 											return;
 										}
-										
+										*/
 										
 
 										//hey why not do a totally unoptimized super duper crappy whatnot
@@ -197,7 +197,7 @@ function create(torrentPath, destDir) {
 
 										
 										
-									}, 1000);
+									}, 2000);
                                     
                                 }
                             });
