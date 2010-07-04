@@ -140,7 +140,7 @@ exports.create = function create(key, host, port, torrent) {
                           delete torrent.piecesQueue[index]; // Delete from the pieces Queue
                           
                           for(var i in torrent.peers){
-                            torrent.peers[i].have(index);
+							torrent.peers[i].have(index);
                           }
                         }
                         
@@ -244,14 +244,18 @@ exports.create = function create(key, host, port, torrent) {
     }
 
     function writePacket(op, payload) {
-        if (op === 0) {
-            stream.write('\0\0\0\0', 'binary');
-        } else {
-            payload = payload || '';
-            stream.write(encodeInt(payload.length + 1)
-                    + String.fromCharCode(op) + payload,
-                    'binary');
-        }
+		try {
+			if (op === 0) {
+				stream.write('\0\0\0\0', 'binary');
+			} else {
+				payload = payload || '';
+				stream.write(encodeInt(payload.length + 1)
+						+ String.fromCharCode(op) + payload,
+						'binary');
+			}
+		} catch (err) {
+			sys.log(err);
+		}
     }
     peer.setChoke = function(state) {
         if (state != amChoked) {

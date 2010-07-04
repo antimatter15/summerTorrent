@@ -113,13 +113,6 @@ function create(torrentPath, destDir) {
                                     that.pingTracker();
                                     
                                     setInterval(function() {
-
-										/*
-										if(Object.size(that.piecesQueue) > 50) { // Only have 50 pieces requested at the same time?
-											sys.log('Limiting queue to 50 requests');
-											return;
-										}
-										*/
 										
 
 										//hey why not do a totally unoptimized super duper crappy whatnot
@@ -137,20 +130,27 @@ function create(torrentPath, destDir) {
 										// Delete any pieces that are in request queue
 										// & Purge pieces queue of any pieces > 120 seconds after requested not recieved.
 										for(i in that.piecesQueue) {
-											if(that.piecesQueue[i] < (new Date().getTime() - 15*60*1000)) {
+											if(that.piecesQueue[i] < (new Date().getTime() - 2*60*1000)) {
 												delete that.piecesQueue[i];
+												
+												for(j in that.peers) {
+													that.peers[j].sendCancel(i);
+												}
+												
 												sys.log('Piece #'+i+' timed out');
 												return;
 											}
 											delete pieces[i];
 										};
-																				
+										
+																		
 										var pieces_array = [];
 										that.store.goodPieces.getBitArray().forEach(function(v, i){ //loop through my bitfield
-											if(v == 0 && pieces[i]){
+											if(v == 0 && pieces[i]) {
 												//sys.log('piece index: '+i+' == i no haz');
 												pieces_array.push(i); //if I don't have it, and somebody else haz it, then add the index to pieces array
-											} else {
+											} else if(v == 1) {
+												delete that.piecesQueue[i];
 												//sys.log('piece index: '+i+' == i haz');
 											}
 										});
@@ -163,6 +163,13 @@ function create(torrentPath, destDir) {
 										//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 										//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 										
+										/*
+										if(Object.size(that.piecesQueue) > 200) { // Only have 50 pieces requested at the same time?
+											sys.log('Limiting queue to 200 requests');
+											return;
+										}
+										*/
+										
 										var peers_random=[];
 										for(i in that.peers) {
 											peers_random.push(that.peers[i]);
@@ -172,7 +179,7 @@ function create(torrentPath, destDir) {
 										//[pieces_array[0]].forEach(function(val, index) {
 										pieces_array.slice(0, 5).forEach(function(val, index) {
 											for(i=0; i<peers_random.length; i++) { // Crude non-even shuffling algorithm
-												if(peers_random[i].getBitfield().getBitArray()[val] && !peers_random.amChoked) {
+												if(peers_random[i].getBitfield().getBitArray()[val] && !peers_random[i].peerChoked && !that.piecesQueue[val]) {
 													peers_random[i].setInterested(true);
 													peers_random[i].setChoke(false);
 													
@@ -185,7 +192,7 @@ function create(torrentPath, destDir) {
 													// Add piece to the list of pieces that are being queued.
 													that.piecesQueue[val]=new Date().getTime();
 													
-													sys.log('requested for part '+val+' from'+peers_random[i].host);
+													sys.log('requested for part '+val+' from '+peers_random[i].host);
 													break;
 												}
 											}
@@ -197,6 +204,11 @@ function create(torrentPath, destDir) {
 										
 										sys.log(gotParts+"/"+totalParts+" Recieved  ("+(Math.floor((gotParts/totalParts) * 100 * 100)/100)+"%)");
 										
+										
+										
+									}, 2000);
+									
+									setInterval(function() {
 										
 										/* SEND REQUESTS TO PEERS HERE */
 										
@@ -219,8 +231,6 @@ function create(torrentPath, destDir) {
 												}
 											}
 										}
-										
-										
 									}, 500);
                                     
                                 }
