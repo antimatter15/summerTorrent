@@ -137,7 +137,7 @@ function create(torrentPath, destDir) {
 										// Delete any pieces that are in request queue
 										// & Purge pieces queue of any pieces > 120 seconds after requested not recieved.
 										for(i in that.piecesQueue) {
-											if(that.piecesQueue[i] < (new Date().getTime() - 2*60*60*1000)) {
+											if(that.piecesQueue[i] < (new Date().getTime() - 15*60*1000)) {
 												delete that.piecesQueue[i];
 												sys.log('Piece #'+i+' timed out');
 												return;
@@ -172,8 +172,9 @@ function create(torrentPath, destDir) {
 										//[pieces_array[0]].forEach(function(val, index) {
 										pieces_array.slice(0, 5).forEach(function(val, index) {
 											for(i=0; i<peers_random.length; i++) { // Crude non-even shuffling algorithm
-												if(peers_random[i].getBitfield().getBitArray()[val]) {
+												if(peers_random[i].getBitfield().getBitArray()[val] && !peers_random.amChoked) {
 													peers_random[i].setInterested(true);
+													peers_random[i].setChoke(false);
 													
 													for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
 														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
@@ -184,7 +185,7 @@ function create(torrentPath, destDir) {
 													// Add piece to the list of pieces that are being queued.
 													that.piecesQueue[val]=new Date().getTime();
 													
-													sys.log('requested for part '+val);
+													sys.log('requested for part '+val+' from'+peers_random[i].host);
 													break;
 												}
 											}
@@ -220,7 +221,7 @@ function create(torrentPath, destDir) {
 										}
 										
 										
-									}, 2000);
+									}, 500);
                                     
                                 }
                             });

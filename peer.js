@@ -91,6 +91,7 @@ exports.create = function create(key, host, port, torrent) {
                 throw "request bad parameters";
             }
             return {index : index, begin : begin, length : length};
+            sys.log('Peer requested piece '+index);
         }
 
         function requestEqual(a, b) {
