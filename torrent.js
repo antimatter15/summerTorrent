@@ -177,7 +177,8 @@ function create(torrentPath, destDir) {
 													
 													for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
 														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
-														sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
+														// Too verbose
+														//sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
 													}
 													
 													// Add piece to the list of pieces that are being queued.
@@ -194,7 +195,29 @@ function create(torrentPath, destDir) {
 										
 										
 										sys.log(gotParts+"/"+totalParts+" Recieved  ("+(Math.floor((gotParts/totalParts) * 100 * 100)/100)+"%)");
-
+										
+										
+										/* SEND REQUESTS TO PEERS HERE */
+										
+										var request;
+										
+										for(i in that.peers) {
+											for(j=0, peer=that.peers[i]; j < peer.requests.length; j++) {
+												request=peer.requests[j];
+												if(that.store.goodPieces.getBitArray()[request.index] == '1') { 
+													filestore.readPiecePart(that.store, request.index, request.begin, request.length, function(err, data) {
+														if(err) {
+															sys.log('Error Reading Piece Part to send to peer');
+														} else {
+															peer.sendPiece(request.index, request.begin, data);
+															sys.log('Successfully sent piece '+request.index+' to '+peer.host);
+														}
+													});
+												} else {
+													sys.log('Peer requested for part '+request.index+', but I do not have it.');
+												}
+											}
+										}
 										
 										
 									}, 2000);
