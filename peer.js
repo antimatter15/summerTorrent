@@ -135,7 +135,7 @@ exports.create = function create(key, host, port, torrent) {
 							/* Todo:
 							 * * Verification
 							 */
-                          sys.log('Wrote Piece #+'+index);
+                          sys.log('Wrote Piece #+'+index+'  lets see '+begin+' heres the data' + block);
                           torrent.store.goodPieces.set(index, 1); //change bitfield
                           delete torrent.piecesQueue[index]; // Delete from the pieces Queue
                           
