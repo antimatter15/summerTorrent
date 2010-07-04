@@ -140,12 +140,11 @@ function create(torrentPath, destDir) {
 													
 													for(var start=0;start<piecelength;start+=Math.pow(2,15)) {
 														that.peers[j].sendCancel(i, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start)));
-														
 													}
 												}
 												
 												sys.log('Piece #'+i+' timed out');
-												return;
+
 											}
 											delete pieces[i];
 										};
