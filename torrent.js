@@ -236,6 +236,13 @@ function create(torrentPath, destDir) {
 										}
 
 									}, 500);
+									
+									setInterval(function() {
+										sys.log('Sent keepalives');
+										for(var i in that.peers) {
+											that.peers[i].writePacket();
+										}
+									}, 30000);
                                     
                                 }
                             });
