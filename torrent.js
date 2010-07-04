@@ -192,7 +192,7 @@ function create(torrentPath, destDir) {
 													for(var start=0;start<piecelength;start+=Math.pow(2,15)) {
 														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start)));
 														// Too verbose
-														sys.log('requesting ('+[val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start))].join(', ')+')');
+														//sys.log('requesting ('+[val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start))].join(', ')+')');
 														
 													}
 													
