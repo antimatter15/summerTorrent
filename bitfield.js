@@ -1,14 +1,11 @@
-var sys = require('sys'),
-    sortedArray = require('./sortedArray');
+var sys = require('sys'), sortedArray = require('./sortedArray');
 
 /*
  * n: number of bits, b: optional byte string,
  */
-
-exports.create = function (n, bytes) {
-    var byteLen = (n + 7) >> 3,
-        b = [];
-    function stringToArray(bytes) {
+exports.create = function(n, bytes){
+    var byteLen = (n + 7) >> 3, b = [];
+    function stringToArray(bytes){
         var i;
         if (bytes) {
             if (bytes.length != byteLen) {
@@ -17,53 +14,50 @@ exports.create = function (n, bytes) {
             for (i = 0; i < byteLen; i++) {
                 b[i] = bytes.charCodeAt(i) & 0xff;
             }
-        } else {
+        }
+        else {
             for (i = 0; i < byteLen; i++) {
                 b[i] = 0;
             }
         }
     };
     stringToArray(bytes);
-    var ret =  {
-        set: function(index, val) {
+    var ret = {
+        set: function(index, val){
             if (!(index >= 0 && index < n)) {
                 throw "bad index " + index;
             }
-            var i = index >> 3,
-                m = 1 << ((~index) & 7),
-                v = b[i];
-            b[i] = v & (~m) | (val ? m : 0);
+            var i = index >> 3, m = 1 << ((~ index) & 7), v = b[i];
+            b[i] = v & (~ m) | (val ? m : 0);
         },
-        get: function(index) {
+        get: function(index){
             if (!(index >= 0 && index < n)) {
                 throw "bad index " + index;
             }
-            var i = index >> 3,
-                m = 1 << ((~index) & 7),
-                v = b[i];
+            var i = index >> 3, m = 1 << ((~ index) & 7), v = b[i];
             return (v & m) != 0;
         },
-        setWire: function (bytes) {
+        setWire: function(bytes){
             stringToArray(bytes);
         },
-        getWire: function() {
+        getWire: function(){
             var bytes = '', i;
             for (i = 0; i < byteLen; i++) {
                 bytes += String.fromCharCode(b[i]);
             }
             return bytes;
         },
-		getBitArray: function() {
-            for(var i = 0,r = []; i < n; i++) {
+        getBitArray: function(){
+            for (var i = 0, r = []; i < n; i++) {
                 r.push(ret.get(i));
             }
             return r;
-	        /*
-		      return b.map(function(val) {
-			      return val.toString(2);
-		      }).join('').split('');
-		      */
-        }  
+            /*
+             return b.map(function(val) {
+             return val.toString(2);
+             }).join('').split('');
+             */
+        }
     };
     
     return ret;
