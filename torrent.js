@@ -164,11 +164,12 @@ function create(torrentPath, destDir) {
 										//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 										//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 										
-										
+										/*
 										if(Object.size(that.piecesQueue) > 100) { // Only have 50 pieces requested at the same time?
 											sys.log('Limiting queue to 100 requests');
 											return;
 										}
+										*/
 										
 										//sys.log('Pieces sorted by availability (rarest first). ('+pieces_array.length+') :'+pieces_array.join(', '));
 
@@ -220,7 +221,7 @@ function create(torrentPath, destDir) {
 										for(i in that.peers) {
 											for(j=0, peer=that.peers[i]; j < peer.requests.length; j++) {
 												request=peer.requests[j];
-												if(that.store.goodPieces.getBitArray()[request.index] == '1') { 
+												if(that.store.goodPieces.getBitArray()[request.index] == '1') {
 													filestore.readPiecePart(that.store, request.index, request.begin, request.length, function(err, data) {
 														if(err) {
 															sys.log('Error Reading Piece Part to send to peer');
@@ -233,7 +234,10 @@ function create(torrentPath, destDir) {
 													sys.log('Peer requested for part '+request.index+', but I do not have it.');
 												}
 											}
+											peer.requests=[];
 										}
+										
+										sys.log('# of peers: '+Object.size(that.peers));
 
 									}, 500);
 									

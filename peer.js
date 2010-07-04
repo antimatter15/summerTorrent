@@ -250,7 +250,8 @@ exports.create = function create(key, host, port, torrent) {
 
 		try {
 			if (op === 0) {
-				stream.write('\0\0\0\0', 'binary');
+				//stream.write('\0\0\0\0', 'binary');
+				stream.write(encodeInt(0), 'binary');
 			} else {
 				payload = payload || '';
 				stream.write(encodeInt(payload.length + 1)
@@ -290,7 +291,7 @@ exports.create = function create(key, host, port, torrent) {
         writePacket(8, encodeInt(index));
     };
     peer.sendKeepalive = function() {
-		writePacket();
+		writePacket(0);
 	}
 
     return peer;
