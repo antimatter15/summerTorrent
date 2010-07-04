@@ -289,6 +289,9 @@ exports.create = function create(key, host, port, torrent) {
     peer.sendCancel = function(index) {
         writePacket(8, encodeInt(index));
     };
+    peer.sendKeepalive = function() {
+		writePacket();
+	}
 
     return peer;
 };

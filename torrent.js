@@ -240,7 +240,7 @@ function create(torrentPath, destDir) {
 									setInterval(function() {
 										sys.log('Sent keepalives');
 										for(var i in that.peers) {
-											that.peers[i].writePacket();
+											that.peers[i].sendKeepalive();
 										}
 									}, 30000);
                                     
