@@ -164,12 +164,11 @@ function create(torrentPath, destDir) {
 										//pieces array now contains a list of pieces where 0 = rarest (and if there's only one peer, then it's sorted numerically)
 										//sys.log('Pieces sorted by availability (rarest first). '+pieces_array.join(', '));
 										
-										/*
-										if(Object.size(that.piecesQueue) > 200) { // Only have 50 pieces requested at the same time?
-											sys.log('Limiting queue to 200 requests');
+										
+										if(Object.size(that.piecesQueue) > 100) { // Only have 50 pieces requested at the same time?
+											sys.log('Limiting queue to 100 requests');
 											return;
 										}
-										*/
 										
 										//sys.log('Pieces sorted by availability (rarest first). ('+pieces_array.length+') :'+pieces_array.join(', '));
 

@@ -132,7 +132,9 @@ exports.create = function create(key, host, port, torrent) {
                     function(err) {
                         //sys.log('Wrote piece ' + index + (err||"NO ERRORS FTW!")); // Reduced verbosity.
                         
-                        //if(pieceLength-(begin+block.length) == 0){ //this screws up the last piece
+                        realPieceLength= (index==(pieceCount-1)) ? torrent.store.lastPieceLength : pieceLength;
+                        
+                        if(realPieceLength == (begin+block.length)){ //this screws up the last piece
 							/* Todo:
 							 * * Verification
 							 */
@@ -143,7 +145,7 @@ exports.create = function create(key, host, port, torrent) {
                           for(var i in torrent.peers){
 							torrent.peers[i].have(index);
                           }
-                        //}
+                        }
                         
                         
             });
