@@ -214,10 +214,6 @@ function create(torrentPath, destDir) {
 										
 										
 										
-									}, 2000);
-									
-									setInterval(function() {
-										
 										/* SEND REQUESTS TO PEERS HERE */
 										
 										var request;
