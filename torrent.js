@@ -131,6 +131,7 @@ function create(torrentPath, destDir) {
 										// & Purge pieces queue of any pieces > 120 seconds after requested not recieved.
 										for(i in that.piecesQueue) {
 											if(that.piecesQueue[i] < (new Date().getTime() - 2*60*1000)) {
+
 												delete that.piecesQueue[i];
 												
 												for(j in that.peers) {
@@ -170,6 +171,8 @@ function create(torrentPath, destDir) {
 										}
 										*/
 										
+										//sys.log('Pieces sorted by availability (rarest first). ('+pieces_array.length+') :'+pieces_array.join(', '));
+
 										var peers_random=[];
 										for(i in that.peers) {
 											peers_random.push(that.peers[i]);
@@ -180,13 +183,18 @@ function create(torrentPath, destDir) {
 										pieces_array.slice(0, 5).forEach(function(val, index) {
 											for(i=0; i<peers_random.length; i++) { // Crude non-even shuffling algorithm
 												if(peers_random[i].getBitfield().getBitArray()[val] && !peers_random[i].peerChoked && !that.piecesQueue[val]) {
+													
 													peers_random[i].setInterested(true);
 													peers_random[i].setChoke(false);
 													
-													for(start=0;start<that.store.pieceLength;start+=Math.pow(2,15)) {
-														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start));
+													var piecelength = (val == that.store.pieceCount - 1)?that.store.lastPieceLength:that.store.pieceLength;
+
+													
+													for(var start=0;start<piecelength;start+=Math.pow(2,15)) {
+														peers_random[i].sendRequest(val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start)));
 														// Too verbose
-														//sys.log('requesting ('+val+', '+start+', '+((start+Math.pow(2,15)) <= that.store.pieceLength ? Math.pow(2,15) : that.store.pieceLength-start)+')');
+														sys.log('requesting ('+[val, start, ((start+Math.pow(2,15)) <= piecelength ? Math.pow(2,15) : (piecelength-start))].join(', ')+')');
+														
 													}
 													
 													// Add piece to the list of pieces that are being queued.
@@ -231,6 +239,7 @@ function create(torrentPath, destDir) {
 												}
 											}
 										}
+
 									}, 500);
                                     
                                 }

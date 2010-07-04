@@ -124,14 +124,15 @@ exports.create = function create(key, host, port, torrent) {
             if (! ((begin >= 0 && begin + length <= pieceLength)
                     && (length > 0 && length <= 32 * 1024)
                     && (index >= 0 && index < pieceCount)) ) {
+                    sys.log('oh crap bad piece params');
                 throw "piece bad parameters";
             }
             //sys.log("received piece " + index +' ' + begin + ' ' + length); // Reduced verbosity
             filestore.writePiecePart(torrent.store, index, begin, block,
                     function(err) {
-                        //sys.log('Wrote piece ' + (err||"NO ERRORS FTW!")); // Reduced verbosity.
+                        //sys.log('Wrote piece ' + index + (err||"NO ERRORS FTW!")); // Reduced verbosity.
                         
-                        if(pieceLength-(begin+block.length) == 0){
+                        //if(pieceLength-(begin+block.length) == 0){ //this screws up the last piece
 							/* Todo:
 							 * * Verification
 							 */
@@ -142,7 +143,7 @@ exports.create = function create(key, host, port, torrent) {
                           for(var i in torrent.peers){
 							torrent.peers[i].have(index);
                           }
-                        }
+                        //}
                         
                         
             });
