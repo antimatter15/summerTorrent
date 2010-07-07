@@ -97,7 +97,7 @@ function createRangeIterator(store, offset, length){
                 throw "StopIteraton";
             }
             file = files[i];
-            fileOffset = file.offset - offset;
+            fileOffset = offset - file.offset;
             fileLength = Math.min(file.length - fileOffset, length);
             i += 1;
             length -= fileLength;
@@ -279,6 +279,7 @@ function readPiece(store, pieceIndex, callback){
 
 function writePiecePart(store, pieceIndex, begin, data, callback){
     var iterator = createPieceFragmentIterator(store, pieceIndex, begin, data.length);
+    console.log(data.length);
     function writePieceImp(){
         var fragment;
         if (iterator.hasNext()) {

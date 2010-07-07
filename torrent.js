@@ -118,7 +118,7 @@ function create(torrentPath, destDir){
                                 // Delete any pieces that are in request queue
                                 // & Purge pieces queue of any pieces > 120 seconds after requested not recieved.
                                 for (i in that.piecesQueue) {
-                                    if (that.piecesQueue[i] < (new Date().getTime() - 2 * 60 * 1000)) {
+                                    if (that.piecesQueue[i] < (new Date().getTime() - 15 * 1000)) {
                                     
                                         delete that.piecesQueue[i];
                                         
