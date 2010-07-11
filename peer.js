@@ -1,8 +1,8 @@
 var bitfield = require('./bitfield'), net = require('net'), sys = require('sys');
 
-exports.create = function create(key, host, port, torrent){
+exports.create = function create(key, host, port, torrent, connection){
     sys.log('peer.create ' + host + ':' + port);
-    var stream = net.createConnection(port, host), header = String.fromCharCode(19) + 'BitTorrent protocol', flagBytes = '\0\0\0\0\0\0\0\0', input = '', needHeader = true, goodPieces = bitfield.create(torrent.store.pieceCount), amInterested = false, amChoked = true, peerInterested = false, peerChoked = true, peer = {
+    var stream = connection || net.createConnection(port, host), header = String.fromCharCode(19) + 'BitTorrent protocol', flagBytes = '\0\0\0\0\0\0\0\0', input = '', needHeader = true, goodPieces = bitfield.create(torrent.store.pieceCount), amInterested = false, amChoked = true, peerInterested = false, peerChoked = true, peer = {
         torrent: torrent,
         key: key,
         host: host,
@@ -111,21 +111,41 @@ exports.create = function create(key, host, port, torrent){
                 throw "piece bad parameters";
             }
             //sys.log("received piece " + index +' ' + begin + ' ' + length); // Reduced verbosity
+            
+            if(!torrent.downloading[index]) torrent.downloading[index] = {};
+            torrent.downloading[index][begin] = true;
+            
             filestore.writePiecePart(torrent.store, index, begin, block, function(err){
                 //sys.log('Wrote piece ' + index + (err||"NO ERRORS FTW!")); // Reduced verbosity.
                 
-                realPieceLength = (index == (pieceCount - 1)) ? torrent.store.lastPieceLength : pieceLength;
+								var hasdone = 0;                
+                for(var z in torrent.downloading[index])
+                	hasdone += +torrent.downloading[index][z];
                 
-                if (realPieceLength == (begin + block.length)) { //this screws up the last piece
-                    /* Todo:
-                     * * Verification
-                     */
-                    sys.log('Wrote Piece #+' + index);
-                    torrent.store.goodPieces.set(index, 1); //change bitfield
-                    delete torrent.piecesQueue[index]; // Delete from the pieces Queue
-                    for (var i in torrent.peers) {
-                        torrent.peers[i].have(index);
-                    }
+                if(hasdone == Math.ceil(pieceLength/Math.pow(2, 15))){
+                	//sure hope this is right
+                	//sys.log('yay done '+hasdone+' out of about '+Math.ceil(pieceLength/Math.pow(2, 15)));
+                	//sys.log(JSON.stringify(torrent.downloading));
+                	
+                	torrent.downloading[index] = {};
+                	delete torrent.downloading[index];
+                	
+                	
+                	filestore.inspectPiece(torrent.store, index, function(valid){
+                		if(valid){
+                			sys.log('Wrote Piece #' + index);
+                			torrent.store.goodPieces.set(index, 1); //change bitfield
+		                  delete torrent.piecesQueue[index]; // Delete from the pieces Queue
+		                  for (var i in torrent.peers) {
+		                      torrent.peers[i].have(index);
+		                  }
+                		}else{
+                			//sys.log('waah broken piece');
+                		}
+                	})
+                
+                }else{
+                	//sys.log('not done yet')
                 }
                 
                 

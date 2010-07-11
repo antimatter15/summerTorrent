@@ -1,15 +1,16 @@
-var bencode = require('./bencode'), crypto = require('crypto');
+var bencode = require('./bencode'), cryptolib = require('crypto');
 filestore = require('./filestore'), fs = require('fs'), listener = require('./listener'), peer = require('./peer'), sys = require('sys'), tracker = require("./tracker");
 
 function create(torrentPath, destDir){
     return {
         torrentPath: torrentPath,
         destDir: destDir,
-        listenerPort: 6882,
+        listenerPort: 6881+Math.floor(10*Math.random()),
         peerId: ('-JS0001-' + Math.random().toString(36).substr(3) +
         Math.random().toString(36).substr(3)).substr(0, 20),
         peers: {},
         store: {},
+        downloading: {},
         metaInfo: {},
         piecesQueue: {},
         pingTracker: function(){
@@ -63,7 +64,7 @@ function create(torrentPath, destDir){
         },
         
         computeHash: function(info){
-            var encoded = bencode.encode(info), hash = crypto.createHash('sha1');
+            var encoded = bencode.encode(info), hash = cryptolib.createHash('sha1');
             hash.update(encoded);
             return hash.digest('binary');
         },
@@ -97,7 +98,7 @@ function create(torrentPath, destDir){
                         }
                         else {
                             sys.log('finished inspecting files.');
-                            listener.create(that.listenerPort, [that.metaInfo.info_hash]);
+                            listener.create(that.listenerPort, that);
                             that.trackerClient = tracker.create(that.metaInfo);
                             that.pingTracker();
                             
@@ -172,7 +173,7 @@ function create(torrentPath, destDir){
                                     peers_random.push(that.peers[i]);
                                 }
                                 peers_random.sort(function(){
-                                    return Math.random() - .5;
+                                    return Math.random() - .5; //TODO: replace with fisher yates knuth
                                 });
                                 
                                 //[pieces_array[0]].forEach(function(val, index) {

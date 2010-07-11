@@ -1,4 +1,4 @@
-var sys = require('sys'), bitfield = require('./bitfield'), fs = require('fs'), crypto = require('crypto'), path = require('path');
+var sys = require('sys'), bitfield = require('./bitfield'), fs = require('fs'), cryptolib = require('crypto'), path = require('path');
 
 /*
  * Filestore: { pieceLength, pieces, files: [{path offset length md5}...],
@@ -339,7 +339,7 @@ function inspectImp(store, pieceIndex, hash, callback){
                 }
                 pieceIndex += 1;
                 if (pieceIndex < store.pieceCount) {
-                    hash = crypto.createHash('sha1');
+                    hash = cryptolib.createHash('sha1');
                     inspectImp(store, pieceIndex, hash, callback);
                 }
                 else {
@@ -350,16 +350,35 @@ function inspectImp(store, pieceIndex, hash, callback){
     });
 }
 
+
+function inspectPiece(store, pieceIndex, callback){
+		var hash = cryptolib.createHash('sha1');
+    readPiece(store, pieceIndex, function(error, data){
+        var digest, expected, goodPiece;
+        if (error) callback(false, error);
+        
+        hash.update(data);
+        digest = hash.digest('binary');
+        
+        expected = store.pieces.substring(pieceIndex * 20, (pieceIndex + 1) * 20);
+        goodPiece = expected === digest;
+        
+        callback(goodPiece)
+    });
+}
+
 // callback(err)
 function inspect(store, callback){
-    var hash = crypto.createHash('sha1');
+    var hash = cryptolib.createHash('sha1');
     store.goodPieces = bitfield.create(store.pieceCount);
     store.left = 0;
     inspectImp(store, 0, hash, callback);
 }
 
+
 exports.create = create;
 exports.inspect = inspect;
+exports.inspectPiece = inspectPiece;
 exports.readPiecePart = readPiecePart;
 exports.writePiecePart = writePiecePart;
 
